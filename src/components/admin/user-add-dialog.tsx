@@ -32,7 +32,7 @@ export function UserAddDialog({
     name: "",
     email: "",
     password: "",
-    role: "user" as "user" | "admin" | "teacher",
+    role: "user" as "user" | "admin" | "teacher" | "student",
     autoVerify: false,
   });
 
@@ -116,7 +116,7 @@ export function UserAddDialog({
           <Label htmlFor="role">Role</Label>
           <Select
             value={formData.role}
-            onValueChange={(value: "user" | "admin" | "teacher") =>
+            onValueChange={(value: "user" | "admin" | "teacher" | "student") =>
               setFormData((prev) => ({ ...prev, role: value }))
             }
           >
@@ -127,6 +127,7 @@ export function UserAddDialog({
               <SelectItem value="user">User</SelectItem>
               <SelectItem value="admin">Admin</SelectItem>
               <SelectItem value="teacher">Teacher</SelectItem>
+              <SelectItem value="student">Student</SelectItem>
             </SelectContent>
           </Select>
         </div>

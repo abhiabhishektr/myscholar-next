@@ -44,7 +44,7 @@ export async function createUser(data: {
   name: string;
   email: string;
   password: string;
-  role?: 'user' | 'admin' | 'teacher' | ('user' | 'admin' | 'teacher')[];
+  role?: 'user' | 'admin' | 'teacher' | 'student' | ('user' | 'admin' | 'teacher' | 'student')[];
   data?: Record<string, any>;
   autoVerify?: boolean;
 }) {

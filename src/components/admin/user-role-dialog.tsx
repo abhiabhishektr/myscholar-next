@@ -24,6 +24,7 @@ const ROLE_OPTIONS = [
   { label: "User", value: "user" },
   { label: "Admin", value: "admin" },
   { label: "Teacher", value: "teacher" },
+  { label: "Student", value: "student" },
 ];
 
 export function UserRoleDialog({ user, isOpen, onClose }: UserRoleDialogProps) {

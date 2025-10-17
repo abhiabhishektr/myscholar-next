@@ -10,6 +10,7 @@ import {
   Shield,
   User,
   UserPlus,
+  GraduationCap,
 } from "lucide-react";
 import { format } from "date-fns";
 import useSWR from "swr";
@@ -179,6 +180,12 @@ export function UsersTable() {
                   Teacher
                 </span>
               </SelectItem>
+            <SelectItem value="student">
+              <span className="flex items-center gap-2">
+                <GraduationCap className="w-4 h-4" />
+                Student
+              </span>
+            </SelectItem>
             <SelectItem value="user">
               <span className="flex items-center gap-2">
                 <User className="w-4 h-4" />
@@ -476,6 +483,8 @@ export function UsersTable() {
                                 ? "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900 dark:text-purple-200 dark:border-purple-700"
                                 : user.role === "teacher"
                                 ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900 dark:text-amber-200 dark:border-amber-700"
+                                : user.role === "student"
+                                ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-700"
                                 : "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-700"
                         }`}
                       >
@@ -483,6 +492,8 @@ export function UsersTable() {
                               <Shield className="h-3 w-3" />
                             ) : user.role === "teacher" ? (
                               <UserPlus className="h-3 w-3" />
+                            ) : user.role === "student" ? (
+                              <GraduationCap className="h-3 w-3" />
                             ) : (
                               <User className="h-3 w-3" />
                             )}
