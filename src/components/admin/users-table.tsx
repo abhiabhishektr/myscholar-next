@@ -173,6 +173,12 @@ export function UsersTable() {
                 Admin
               </span>
             </SelectItem>
+              <SelectItem value="teacher">
+                <span className="flex items-center gap-2">
+                  <UserPlus className="w-4 h-4" />
+                  Teacher
+                </span>
+              </SelectItem>
             <SelectItem value="user">
               <span className="flex items-center gap-2">
                 <User className="w-4 h-4" />
@@ -467,15 +473,19 @@ export function UsersTable() {
                         variant="outline"
                         className={`flex items-center gap-1 px-2 py-1 text-xs ${
                           user.role === "admin"
-                            ? "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900 dark:text-purple-200 dark:border-purple-700"
-                            : "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-700"
+                                ? "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900 dark:text-purple-200 dark:border-purple-700"
+                                : user.role === "teacher"
+                                ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900 dark:text-amber-200 dark:border-amber-700"
+                                : "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-700"
                         }`}
                       >
-                        {user.role === "admin" ? (
-                          <Shield className="h-3 w-3" />
-                        ) : (
-                          <User className="h-3 w-3" />
-                        )}
+                            {user.role === "admin" ? (
+                              <Shield className="h-3 w-3" />
+                            ) : user.role === "teacher" ? (
+                              <UserPlus className="h-3 w-3" />
+                            ) : (
+                              <User className="h-3 w-3" />
+                            )}
                         {user.role
                           ? user.role.charAt(0).toUpperCase() +
                             user.role.slice(1)
