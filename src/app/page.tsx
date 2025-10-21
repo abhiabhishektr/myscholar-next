@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Users, Database, Palette } from "lucide-react";
-import Link from "next/link";
 import { Hero } from "@/components/ui/animated-hero";
 
 const HomePage = () => {
