@@ -1,6 +1,6 @@
 import { db } from './index';
 import { appointment } from './schema';
-import { eq, and, gte, lte, isNull } from 'drizzle-orm';
+import { eq, and, gte, lte, isNull, or, lt, gt } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 
 export async function createAppointment(data: {
@@ -11,6 +11,23 @@ export async function createAppointment(data: {
   status?: string;
   notes?: string;
 }) {
+  // Check for overlapping appointments
+  const overlapping = await db
+    .select()
+    .from(appointment)
+    .where(
+      and(
+        isNull(appointment.deletedAt),
+        or(eq(appointment.studentId, data.studentId), eq(appointment.teacherId, data.teacherId)),
+        lt(appointment.startTime, data.endTime),
+        gt(appointment.endTime, data.startTime),
+      ),
+    );
+
+  if (overlapping.length > 0) {
+    throw new Error('Appointment overlaps with an existing appointment for the student or teacher');
+  }
+
   const result = await db
     .insert(appointment)
     .values({ id: randomUUID(), ...data })
