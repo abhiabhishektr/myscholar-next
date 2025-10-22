@@ -11,10 +11,10 @@ export async function createAppointment(data: {
   status?: string;
   notes?: string;
 }) {
-  const result = await db.insert(appointment).values({
-    id: randomUUID(),
-    ...data,
-  }).returning();
+  const result = await db
+    .insert(appointment)
+    .values({ id: randomUUID(), ...data })
+    .returning();
   return result[0];
 }
 
@@ -27,16 +27,19 @@ export async function getAppointmentById(id: string) {
   return result[0];
 }
 
-export async function updateAppointment(id: string, data: {
-  status?: string;
-  notes?: string;
-  punchInTime?: Date;
-}) {
+export async function updateAppointment(
+  id: string,
+  data: { status?: string; notes?: string; punchInTime?: Date },
+) {
   const result = await db.update(appointment).set(data).where(eq(appointment.id, id)).returning();
   return result[0];
 }
 
 export async function softDeleteAppointment(id: string) {
-  const result = await db.update(appointment).set({ deletedAt: new Date() }).where(eq(appointment.id, id)).returning();
+  const result = await db
+    .update(appointment)
+    .set({ deletedAt: new Date() })
+    .where(eq(appointment.id, id))
+    .returning();
   return result[0];
 }
