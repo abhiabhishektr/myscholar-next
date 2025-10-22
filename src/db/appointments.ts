@@ -1,6 +1,6 @@
 import { db } from './index';
 import { appointment } from './schema';
-import { eq } from 'drizzle-orm';
+import { eq, and, gte, lte, isNull } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 
 export async function createAppointment(data: {
@@ -18,12 +18,42 @@ export async function createAppointment(data: {
   return result[0];
 }
 
-export async function getAppointments() {
-  return await db.select().from(appointment);
+export async function getAppointments(filters?: {
+  studentId?: string;
+  teacherId?: string;
+  status?: string;
+  startDate?: Date;
+  endDate?: Date;
+}) {
+  const whereConditions = [isNull(appointment.deletedAt)];
+
+  if (filters?.studentId) {
+    whereConditions.push(eq(appointment.studentId, filters.studentId));
+  }
+  if (filters?.teacherId) {
+    whereConditions.push(eq(appointment.teacherId, filters.teacherId));
+  }
+  if (filters?.status) {
+    whereConditions.push(eq(appointment.status, filters.status));
+  }
+  if (filters?.startDate) {
+    whereConditions.push(gte(appointment.startTime, filters.startDate));
+  }
+  if (filters?.endDate) {
+    whereConditions.push(lte(appointment.startTime, filters.endDate));
+  }
+
+  return await db
+    .select()
+    .from(appointment)
+    .where(and(...whereConditions));
 }
 
 export async function getAppointmentById(id: string) {
-  const result = await db.select().from(appointment).where(eq(appointment.id, id));
+  const result = await db
+    .select()
+    .from(appointment)
+    .where(and(eq(appointment.id, id), isNull(appointment.deletedAt)));
   return result[0];
 }
 
