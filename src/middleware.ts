@@ -1,7 +1,6 @@
 import { isPublicPath } from '@/lib/public-paths';
 import { DEFAULT_LOGIN_REDIRECT } from '@/lib/config';
 import { getSessionCookie } from 'better-auth/cookies';
-import { auth } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function middleware(request: NextRequest) {
@@ -23,14 +22,6 @@ export async function middleware(request: NextRequest) {
   // For protected paths, check authentication
   if (!sessionCookie) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
-  }
-
-  // For admin paths, check role
-  if (pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) {
-    const session = await auth.api.getSession({ headers: request.headers });
-    if (!session || session.user.role !== 'admin') {
-      return new NextResponse('Forbidden', { status: 403 });
-    }
   }
 
   return NextResponse.next();

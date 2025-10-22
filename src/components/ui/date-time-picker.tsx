@@ -14,14 +14,30 @@ import {
 } from "@/components/ui/popover";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
-export function DateTimePicker() {
-  const [date, setDate] = React.useState<Date>();
+interface DateTimePickerProps {
+  value?: Date;
+  onChange?: (date: Date | undefined) => void;
+}
+
+export function DateTimePicker({ value, onChange }: DateTimePickerProps) {
+  const [date, setDate] = React.useState<Date | undefined>(value);
   const [isOpen, setIsOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    setDate(value);
+  }, [value]);
+
+  const updateDate = (newDate: Date | undefined) => {
+    setDate(newDate);
+    onChange?.(newDate);
+  };
 
   const hours = Array.from({ length: 12 }, (_, i) => i + 1);
   const handleDateSelect = (selectedDate: Date | undefined) => {
     if (selectedDate) {
-      setDate(selectedDate);
+      const newDate = date ? new Date(date) : new Date();
+      newDate.setFullYear(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+      updateDate(newDate);
     }
   };
 
@@ -29,22 +45,20 @@ export function DateTimePicker() {
     type: "hour" | "minute" | "ampm",
     value: string
   ) => {
-    if (date) {
-      const newDate = new Date(date);
-      if (type === "hour") {
-        newDate.setHours(
-          (parseInt(value) % 12) + (newDate.getHours() >= 12 ? 12 : 0)
-        );
-      } else if (type === "minute") {
-        newDate.setMinutes(parseInt(value));
-      } else if (type === "ampm") {
-        const currentHours = newDate.getHours();
-        newDate.setHours(
-          value === "PM" ? currentHours + 12 : currentHours - 12
-        );
-      }
-      setDate(newDate);
+    const newDate = date ? new Date(date) : new Date();
+    if (type === "hour") {
+      newDate.setHours(
+        (parseInt(value) % 12) + (newDate.getHours() >= 12 ? 12 : 0)
+      );
+    } else if (type === "minute") {
+      newDate.setMinutes(parseInt(value));
+    } else if (type === "ampm") {
+      const currentHours = newDate.getHours();
+      newDate.setHours(
+        value === "PM" ? currentHours + 12 : currentHours - 12
+      );
     }
+    updateDate(newDate);
   };
 
   return (
