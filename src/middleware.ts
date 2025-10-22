@@ -1,7 +1,8 @@
-import { isPublicPath } from "@/lib/public-paths";
-import { DEFAULT_LOGIN_REDIRECT } from "@/lib/config";
-import { getSessionCookie } from "better-auth/cookies";
-import { NextRequest, NextResponse } from "next/server";
+import { isPublicPath } from '@/lib/public-paths';
+import { DEFAULT_LOGIN_REDIRECT } from '@/lib/config';
+import { getSessionCookie } from 'better-auth/cookies';
+import { auth } from '@/lib/auth';
+import { NextRequest, NextResponse } from 'next/server';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -10,7 +11,7 @@ export async function middleware(request: NextRequest) {
   const sessionCookie = getSessionCookie(request);
 
   // If user is already logged in and trying to access auth pages, redirect to dashboard
-  if (sessionCookie && pathname.startsWith("/auth/")) {
+  if (sessionCookie && pathname.startsWith('/auth/')) {
     return NextResponse.redirect(new URL(DEFAULT_LOGIN_REDIRECT, request.url));
   }
 
@@ -21,13 +22,19 @@ export async function middleware(request: NextRequest) {
 
   // For protected paths, check authentication
   if (!sessionCookie) {
-    return NextResponse.redirect(new URL("/auth/login", request.url));
+    return NextResponse.redirect(new URL('/auth/login', request.url));
+  }
+
+  // For admin paths, check role
+  if (pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) {
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session || session.user.role !== 'admin') {
+      return new NextResponse('Forbidden', { status: 403 });
+    }
   }
 
   return NextResponse.next();
 }
 
 // Match all routes except for static files and Next.js internal routes
-export const config = {
-  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
-};
+export const config = { matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'] };
