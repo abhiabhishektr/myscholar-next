@@ -76,6 +76,7 @@ export const appointment = pgTable('appointment', {
     .notNull(),
   notes: text('notes'),
   punchInTime: timestamp('punch_in_time'),
+  deletedAt: timestamp('deleted_at'),
   createdAt: timestamp('created_at')
     .$defaultFn(() => new Date())
     .notNull(),
