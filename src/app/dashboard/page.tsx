@@ -6,24 +6,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Shield, Users, Mail, Settings, Code } from "lucide-react";
 import Link from "next/link";
 
 const DashboardPage = () => {
-  const techStack = [
-    "Next.js 15",
-    "Better Auth",
-    "PostgreSQL",
-    "Drizzle ORM",
-    "Tailwind CSS",
-    "Radix UI",
-    "TypeScript",
-    "React Hook Form",
-    "Zod",
-  ];
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -68,7 +55,7 @@ const DashboardPage = () => {
                 asChild
               >
                 <Link
-                  href="https://github.com/abhiabhishektr/myscholar-next-better-auth-starter"
+                  href="https://github.com/abhiabhishektr/myschoolar-tuition-starter"
                   target="_blank"
                 >
                   <Code className="h-5 w-5" />
@@ -88,31 +75,6 @@ const DashboardPage = () => {
             </div>
           </CardContent>
         </Card>
-
-        {/* Tech Stack */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Tech Stack</CardTitle>
-            <CardDescription>
-              Built with modern technologies for performance, security, and
-              developer experience
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {techStack.map((tech, index) => (
-                <Badge key={index} variant="outline" className="px-3 py-1">
-                  {tech}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Footer */}
-        <div className="text-center mt-12 pt-8 border-t border-border/50">
-          
-        </div>
       </div>
     </div>
   );
