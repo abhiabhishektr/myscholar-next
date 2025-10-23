@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Users, Settings, LogOut, GalleryVerticalEnd, Calendar } from "lucide-react";
+import { Users, Settings, LogOut, GalleryVerticalEnd, Calendar, CalendarDays } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 
 import {
@@ -28,6 +28,11 @@ const sidebarNavItems = [
     href: "/admin/appointment",
     icon: Calendar,
     label: "Appointment",
+  },
+  {
+    href: "/admin/appointments",
+    icon: CalendarDays,
+    label: "Appointments",
   },
 ];
 

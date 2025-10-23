@@ -9,7 +9,7 @@ import Image from "next/image";
 function Hero() {
   const [titleNumber, setTitleNumber] = useState(0);
   const titles = useMemo(
-    () => ["secure", "modern", "production-ready", "scalable", "powerful"],
+    () => ["personalized", "expert", "one-on-one", "effective", "transformative"],
     [],
   );
 
@@ -31,7 +31,7 @@ function Hero() {
           <div>
             <Button variant="secondary" size="sm" className="gap-4" asChild>
               <a
-                href="https://www.myscholar.com"
+                href="https://www.myschoolartuition.com"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -49,7 +49,7 @@ function Hero() {
           <div className="flex gap-4 flex-col">
             <h1 className="text-5xl md:text-7xl max-w-2xl tracking-tighter text-center font-regular">
               <span className="text-primary font-medium">
-                Authentication made
+                Learning made
               </span>
               <span className="relative flex w-full justify-center overflow-hidden text-center md:pb-4 md:pt-1">
                 &nbsp;
@@ -78,10 +78,7 @@ function Hero() {
             </h1>
 
             <p className="text-lg md:text-xl leading-relaxed tracking-tight text-muted-foreground max-w-2xl text-center">
-              Skip months of authentication setup. Get a complete Next.js
-              boilerplate with Better Auth, admin dashboard, user management,
-              and everything you need to launch your application with
-              enterprise-grade security.
+              Guiding young minds on the journey to brilliance through knowledge and dedication. Get personalized one-on-one tutoring for KG-12th grade students with expert mentors and flexible scheduling.
             </p>
           </div>
           <div className="flex flex-row gap-3">
@@ -90,7 +87,7 @@ function Hero() {
             </Button>
             <Button size="lg" className="gap-4" asChild>
               <a
-                href="https://github.com/abhiabhishektr/myscholar-next-better-auth-starter"
+                href="https://github.com/abhiabhishektr/myschoolar-tuition-starter"
                 target="_blank"
                 rel="noopener noreferrer"
               >

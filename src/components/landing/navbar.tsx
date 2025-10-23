@@ -37,7 +37,7 @@ const Navbar = () => {
                 className="h-6 w-6 object-contain"
               />
             </div>
-            <span className="font-bold text-xl">Better Auth Starter</span>
+            <span className="font-bold text-xl">MySchoolar Tuition</span>
           </Link>
 
           {/* Navigation Links */}

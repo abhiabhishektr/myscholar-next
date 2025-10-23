@@ -7,67 +7,59 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Shield, Users, Database, Palette } from "lucide-react";
+import { BookOpen, Trophy, GraduationCap, RefreshCw } from "lucide-react";
 import { Hero } from "@/components/ui/animated-hero";
 
 const HomePage = () => {
   const features = [
     {
-      icon: <Shield className="h-5 w-5" />,
-      title: "Authentication & Authorization",
+      icon: <BookOpen className="h-5 w-5" />,
+      title: "School Tuition KG-12th",
       description:
-        "Complete auth system with email verification, password reset, and role-based access control.",
+        "Comprehensive tutoring for all grades covering various curricula.",
       items: [
-        "Email & Password Auth",
-        "Session Management",
-        "Role-based Access",
-        "Account Linking",
+        "CBSE",
+        "ICSE/ISC",
+        "IGCSE",
+        "IB",
       ],
     },
     {
-      icon: <Users className="h-5 w-5" />,
-      title: "User Management",
+      icon: <Trophy className="h-5 w-5" />,
+      title: "Competitive Exams",
       description:
-        "Comprehensive user administration with advanced controls and audit capabilities.",
+        "Preparation for entrance exams and competitive tests.",
       items: [
-        "User Registration",
-        "Profile Management",
-        "Ban/Unban Users",
-        "Session Revocation",
+        "JEE",
+        "NEET",
+        "Olympiads",
+        "Scholarships",
       ],
     },
     {
-      icon: <Database className="h-5 w-5" />,
-      title: "Database & ORM",
+      icon: <GraduationCap className="h-5 w-5" />,
+      title: "Foundation Courses",
       description:
-        "Modern database setup with type-safe queries and automated migrations.",
+        "Building strong foundations for future academic success.",
       items: [
-        "PostgreSQL",
-        "Drizzle ORM",
-        "Type Safety",
-        "Automated Migrations",
+        "Math Basics",
+        "Science Fundamentals",
+        "Language Skills",
+        "Study Habits",
       ],
     },
     {
-      icon: <Palette className="h-5 w-5" />,
-      title: "Modern UI/UX",
+      icon: <RefreshCw className="h-5 w-5" />,
+      title: "Revision Classes",
       description:
-        "Beautiful, responsive design system with accessibility built-in.",
-      items: ["Tailwind CSS", "shadcn ui", "Dark Mode", "Mobile Responsive"],
+        "Focused revision to reinforce concepts and boost exam readiness.",
+      items: [
+        "Key Concepts",
+        "Practice Questions",
+        "Doubt Clearing",
+        "Mock Tests",
+      ],
     },
-  ];
-
-  const techStack = [
-    "Next.js 15",
-    "Better Auth",
-    "PostgreSQL",
-    "Drizzle ORM",
-    "Tailwind CSS",
-    "shadcn ui",
-    "TypeScript",
-    "React Hook Form",
-    "Zod",
   ];
 
   return (
@@ -112,29 +104,86 @@ const HomePage = () => {
           ))}
         </div>
 
-        {/* Tech Stack */}
+        {/* About Us */}
+        <Card className="mb-12">
+          <CardHeader>
+            <CardTitle>About Us</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              Transforming Education for KG to 12th Grade Through One-to-One Tuition. At MySchoolar Tuition, we provide personalized one-on-one tutoring tailored to each students unique needs and learning style.
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Why Choose Us */}
+        <div className="grid md:grid-cols-2 gap-6 mb-12">
+          <Card>
+            <CardHeader>
+              <CardTitle>Why Choose Us</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2">
+                <li className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-primary" />
+                  <span>Convenient Scheduling</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-primary" />
+                  <span>Expert Mentors</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-primary" />
+                  <span>Guaranteed Results</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-primary" />
+                  <span>One-to-One Tuition</span>
+                </li>
+              </ul>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Our Impact</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4 text-center">
+                <div>
+                  <div className="text-2xl font-bold text-primary">3,000+</div>
+                  <div className="text-sm text-muted-foreground">Students Enrolled</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-primary">20k+</div>
+                  <div className="text-sm text-muted-foreground">Sessions Completed</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Contact */}
         <Card>
           <CardHeader>
-            <CardTitle>Tech Stack</CardTitle>
+            <CardTitle>Get in Touch</CardTitle>
             <CardDescription>
-              Built with modern technologies for performance, security, and
-              developer experience
+              Have questions? Reach out to us for personalized guidance.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {techStack.map((tech, index) => (
-                <Badge key={index} variant="outline" className="px-3 py-1">
-                  {tech}
-                </Badge>
-              ))}
+            <div className="space-y-2">
+              <p><strong>Address:</strong> MySchoolar Tuition, AAB Complex, Court Road, Alathur, Palakkad, Kerala, 678541</p>
+              <p><strong>Phone:</strong> +91 88482 65641 | +91 79091 93350</p>
+              <p><strong>Email:</strong> info@myschoolartuition.com</p>
             </div>
           </CardContent>
         </Card>
 
         {/* Footer */}
         <div className="text-center mt-12 pt-8 border-t border-border/50">
-
+          <p className="text-muted-foreground">
+            © 2025 MySchoolar Tuition. All Rights Reserved.
+          </p>
         </div>
       </div>
     </div>
