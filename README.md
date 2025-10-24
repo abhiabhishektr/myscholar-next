@@ -1,16 +1,18 @@
-#  Auth Starter
+# Auth Starter
 
 A modern, production-ready Next.js boilerplate with comprehensive authentication, admin dashboard, and user management features. Built by for rapid application development.
 
 ## ✨ Features
 
 ### 🔐 Authentication
+
 - **Email & Password Authentication** with email verification
 - **Session Management** with secure token handling
 - **Account Linking** support
 - **Role-based Access Control** (Admin, User roles)
 
 ### 👥 User Management
+
 - **User Registration & Login** with form validation
 - **Email Verification** system
 - **Profile Management**
@@ -18,12 +20,14 @@ A modern, production-ready Next.js boilerplate with comprehensive authentication
 - **Session Revocation** for security
 
 ### 🛡️ Admin Dashboard
+
 - **User Management Interface** - View, edit, ban/unban users
 - **Role Assignment** - Manage user permissions
 - **User Actions** - Delete users, revoke sessions
 - **Responsive Admin UI** with modern design
 
 ### 🎨 UI/UX
+
 - **Modern Design System** with Tailwind CSS
 - **Responsive Layout** for all devices
 - **Component Library** with Radix UI primitives
@@ -33,7 +37,7 @@ A modern, production-ready Next.js boilerplate with comprehensive authentication
 ## 🛠️ Tech Stack
 
 - **Framework:** Next.js 15 with App Router
-- **Authentication:** Better Auth
+- **Authentication:** myschoolartuition
 - **Database:** PostgreSQL with Drizzle ORM
 - **Styling:** Tailwind CSS
 - **UI Components:** Radix UI
@@ -46,19 +50,21 @@ A modern, production-ready Next.js boilerplate with comprehensive authentication
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - PostgreSQL database
 - Resend account (for email functionality)
 
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd auth-starter
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
@@ -72,6 +78,7 @@ A modern, production-ready Next.js boilerplate with comprehensive authentication
    ```
 
 4. **Database Setup**
+
    ```bash
    # Generate and run migrations
    npm run db:generate
@@ -118,11 +125,13 @@ src/
 ## 🔑 Key Features Explained
 
 ### Authentication Flow
+
 1. **Registration:** Users sign up with email/password
 2. **Email Verification:** Automated email verification process
 3. **Login:** Secure session-based authentication
 
 ### Admin Features
+
 - **User Management:** Full CRUD operations on user accounts
 - **Role Management:** Assign and modify user roles
 - **Security Actions:** Ban users, revoke sessions, delete accounts
@@ -131,6 +140,7 @@ src/
 ## 🚀 Deployment
 
 ### Vercel (Recommended)
+
 1. Push your code to GitHub
 2. Connect your repository to Vercel
 3. Add environment variables in Vercel dashboard
@@ -147,9 +157,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 🙋 Support
 
 For support and questions:
+
 - Create an issue in this repository
 
 ---
-
-
-
