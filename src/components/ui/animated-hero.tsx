@@ -78,7 +78,8 @@ function Hero() {
             </h1>
 
             <p className="text-lg md:text-xl leading-relaxed tracking-tight text-muted-foreground max-w-2xl text-center">
-              Guiding young minds on the journey to brilliance through knowledge and dedication. Get personalized one-on-one tutoring for KG-12th grade students with expert mentors and flexible scheduling.
+              Guiding young minds to brilliance. Get personalized one-on-one tutoring
+              for KG-12th grade students with expert mentors.
             </p>
           </div>
           <div className="flex flex-row gap-3">
