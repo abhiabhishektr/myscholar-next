@@ -8,9 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
-import { Check, ChevronsUpDown, Search, X } from "lucide-react";
+import { Check, ChevronsUpDown, Search, X, Edit } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { AppointmentStatusDialog } from "@/components/admin/appointment-status-dialog";
 
 interface Appointment {
   id: string;
@@ -34,6 +35,11 @@ export default function AppointmentsPage() {
   const [users, setUsers] = useState<Record<string, User>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Status dialog state
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string>("");
+  const [selectedAppointmentStatus, setSelectedAppointmentStatus] = useState<string>("");
 
   // Filter states
   const [studentOpen, setStudentOpen] = useState(false);
@@ -143,6 +149,16 @@ export default function AppointmentsPage() {
     setEndDate(undefined);
     setStudentQuery("");
     setTeacherQuery("");
+    fetchAppointments();
+  };
+
+  const handleOpenStatusDialog = (appointmentId: string, currentStatus: string) => {
+    setSelectedAppointmentId(appointmentId);
+    setSelectedAppointmentStatus(currentStatus);
+    setStatusDialogOpen(true);
+  };
+
+  const handleStatusUpdated = () => {
     fetchAppointments();
   };
 
@@ -326,9 +342,19 @@ export default function AppointmentsPage() {
               <CardHeader>
                 <CardTitle className="flex justify-between items-center">
                   <span>Appointment #{appointment.id.slice(-8)}</span>
-                  <Badge variant={appointment.status === 'scheduled' ? 'default' : 'secondary'}>
-                    {appointment.status}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={appointment.status === 'scheduled' ? 'default' : 'secondary'}>
+                      {appointment.status}
+                    </Badge>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleOpenStatusDialog(appointment.id, appointment.status)}
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      Update Status
+                    </Button>
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -364,6 +390,15 @@ export default function AppointmentsPage() {
           ))
         )}
       </div>
+
+      {/* Status Update Dialog */}
+      <AppointmentStatusDialog
+        open={statusDialogOpen}
+        onOpenChange={setStatusDialogOpen}
+        appointmentId={selectedAppointmentId}
+        currentStatus={selectedAppointmentStatus}
+        onStatusUpdated={handleStatusUpdated}
+      />
     </div>
   );
 }
