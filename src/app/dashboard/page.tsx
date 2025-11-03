@@ -1,14 +1,5 @@
 import Navbar from "@/components/landing/navbar";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Shield, Users, Mail, Settings, Code } from "lucide-react";
-import Link from "next/link";
+import { Mail } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { UserAppointments } from "@/components/dashboard/user-appointments";
@@ -19,19 +10,53 @@ const DashboardPage = async () => {
   });
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <Navbar />
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* User Info */}
         {session?.user && (
           <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">
-              Welcome, {session.user.name}!
-            </h1>
-            <p className="text-muted-foreground">
-              Role: <span className="capitalize">{session.user.role}</span>
-            </p>
+            <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-3xl shadow-2xl p-8">
+              {/* Decorative Elements */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32"></div>
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24"></div>
+              
+              {/* Content */}
+              <div className="relative z-10">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <p className="text-white/80 text-sm font-medium mb-2">Welcome back,</p>
+                    <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 drop-shadow-lg">
+                      {session.user.name}
+                    </h1>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm border border-white/30">
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                        <span className="text-white font-semibold capitalize text-sm">
+                          {session.user.role}
+                        </span>
+                      </div>
+                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm border border-white/30">
+                        <Mail className="w-4 h-4 text-white" />
+                        <span className="text-white/90 text-sm">
+                          {session.user.email}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Avatar Section */}
+                  <div className="hidden md:block">
+                    <div className="w-24 h-24 rounded-full bg-white/20 backdrop-blur-sm border-4 border-white/30 flex items-center justify-center shadow-xl">
+                      <span className="text-4xl font-bold text-white">
+                        {session.user.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -46,66 +71,6 @@ const DashboardPage = async () => {
             }} />
           </div>
         )}
-
-        {/* Quick Actions */}
-        <Card className="mb-12">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Quick Actions
-            </CardTitle>
-            <CardDescription>
-              Get started with common tasks and explore the template features
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Button
-                variant="outline"
-                className="h-auto p-4 flex-col gap-2"
-                asChild
-              >
-                <Link href="/auth/register">
-                  <Users className="h-5 w-5" />
-                  <span>Create Account</span>
-                </Link>
-              </Button>
-              <Button
-                variant="outline"
-                className="h-auto p-4 flex-col gap-2"
-                asChild
-              >
-                <Link href="/admin">
-                  <Shield className="h-5 w-5" />
-                  <span>Admin Panel</span>
-                </Link>
-              </Button>
-              <Button
-                variant="outline"
-                className="h-auto p-4 flex-col gap-2"
-                asChild
-              >
-                <Link
-                  href="https://github.com/abhiabhishektr/myschoolar-tuition-starter"
-                  target="_blank"
-                >
-                  <Code className="h-5 w-5" />
-                  <span>View Source</span>
-                </Link>
-              </Button>
-              <Button
-                variant="outline"
-                className="h-auto p-4 flex-col gap-2"
-                asChild
-              >
-                <Link href="https://docs.myscholar.com" target="_blank">
-                  <Mail className="h-5 w-5" />
-                  <span>Documentation</span>
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

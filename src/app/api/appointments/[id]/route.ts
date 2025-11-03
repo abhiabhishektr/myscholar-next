@@ -4,10 +4,7 @@ import { auth } from '@/lib/auth';
 import { updateAppointmentSchema } from '@/schemas/appointment';
 import { getAppointmentById, updateAppointment, softDeleteAppointment } from '@/db/appointments';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const appointment = await getAppointmentById(id);
@@ -20,14 +17,11 @@ export async function GET(
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Get the current session
     const session = await auth.api.getSession({ headers: request.headers });
-    
+
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -47,7 +41,7 @@ export async function PATCH(
     if (!isAdmin && !isAssignedTeacher) {
       return NextResponse.json(
         { error: 'Unauthorized: Only admin or the assigned teacher can update this appointment' },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -71,7 +65,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin(request);
