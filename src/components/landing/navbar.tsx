@@ -23,28 +23,25 @@ const Navbar = () => {
   const isAdmin = session?.user?.role === "admin";
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="sticky top-0 z-50 w-full border-b border-blue-200 dark:border-blue-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* Logo/Brand */}
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <Image
-                src="/logo.png"
-                alt="Logo"
-                width={24}
-                height={24}
-                className="h-6 w-6 object-contain"
-              />
-            </div>
-            <span className="font-bold text-xl">MySchoolar Tuition</span>
+            <Image
+              src="/logo.png"
+              alt="MySchoolar Tuition Logo"
+              width={160}
+              height={50}
+              className="h-10 md:h-12 w-auto object-contain"
+            />
           </Link>
 
           {/* Navigation Links */}
           {session && (
             <div className="hidden md:flex items-center gap-4">
               <Link href="/dashboard">
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950">
                   Dashboard
                 </Button>
               </Link>
@@ -57,12 +54,12 @@ const Navbar = () => {
           {!session ? (
             <div className="flex items-center gap-2">
               <Link href="/auth/register">
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950">
                   Sign Up
                 </Button>
               </Link>
               <Link href="/auth/login">
-                <Button size="sm">Sign In</Button>
+                <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">Sign In</Button>
               </Link>
             </div>
           ) : (
@@ -70,8 +67,7 @@ const Navbar = () => {
               {/* Admin Badge */}
               {isAdmin && (
                 <Badge
-                  variant="secondary"
-                  className="hidden sm:flex items-center gap-1"
+                  className="hidden sm:flex items-center gap-1 bg-blue-600 text-white hover:bg-blue-700"
                 >
                   <Shield className="h-3 w-3" />
                   Admin
@@ -83,14 +79,14 @@ const Navbar = () => {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="relative h-8 w-8 rounded-full"
+                    className="relative h-8 w-8 rounded-full hover:bg-blue-50 dark:hover:bg-blue-950"
                   >
-                    <Avatar className="h-8 w-8">
+                    <Avatar className="h-8 w-8 ring-2 ring-blue-200 dark:ring-blue-800">
                       <AvatarImage
                         src={session.user.image || ""}
                         alt={session.user.name || ""}
                       />
-                      <AvatarFallback className="text-xs">
+                      <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
                         {session.user.name?.charAt(0)?.toUpperCase() ||
                           session.user.email?.charAt(0)?.toUpperCase() ||
                           "U"}
