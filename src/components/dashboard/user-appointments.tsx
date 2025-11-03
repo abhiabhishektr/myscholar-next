@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar, Clock, User, Edit, CheckCircle2 } from "lucide-react";
+import { Calendar, Clock, User, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { AppointmentStatusDialog } from "@/components/admin/appointment-status-dialog";
 
@@ -230,26 +229,15 @@ export function UserAppointments({ currentUser }: UserAppointmentsProps) {
                         </span>
                       </div>
                       {currentUser.role === 'teacher' && appointment.status === 'scheduled' && (
-                        <div className="flex items-center gap-2">
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <Checkbox
-                              checked={false}
-                              onCheckedChange={(checked: boolean) =>
-                                handleQuickComplete(appointment.id, checked)
-                              }
-                              disabled={updatingAppointments.has(appointment.id)}
-                            />
-                            <span className="text-sm">Mark Complete</span>
-                          </label>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleOpenStatusDialog(appointment.id, appointment.status)}
-                          >
-                            <Edit className="w-4 h-4 mr-1" />
-                            Update
-                          </Button>
-                        </div>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => handleQuickComplete(appointment.id, true)}
+                          disabled={updatingAppointments.has(appointment.id)}
+                        >
+                          <CheckCircle2 className="w-4 h-4 mr-1" />
+                          Mark Complete
+                        </Button>
                       )}
                     </div>
 
@@ -319,8 +307,7 @@ export function UserAppointments({ currentUser }: UserAppointmentsProps) {
                           size="sm"
                           onClick={() => handleOpenStatusDialog(appointment.id, appointment.status)}
                         >
-                          <Edit className="w-4 h-4 mr-1" />
-                          Update
+                          View Details
                         </Button>
                       )}
                     </div>
