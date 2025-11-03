@@ -30,6 +30,21 @@ interface User {
   email: string;
 }
 
+const getStatusBadgeProps = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'scheduled':
+      return { variant: 'default' as const, className: '' };
+    case 'completed':
+      return { variant: 'secondary' as const, className: 'bg-green-100 text-green-800 border-green-200' };
+    case 'cancelled':
+      return { variant: 'destructive' as const, className: '' };
+    case 'no-show':
+      return { variant: 'outline' as const, className: 'bg-orange-100 text-orange-800 border-orange-200' };
+    default:
+      return { variant: 'secondary' as const, className: '' };
+  }
+};
+
 export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [users, setUsers] = useState<Record<string, User>>({});
@@ -343,7 +358,10 @@ export default function AppointmentsPage() {
                 <CardTitle className="flex justify-between items-center">
                   <span>Appointment #{appointment.id.slice(-8)}</span>
                   <div className="flex items-center gap-2">
-                    <Badge variant={appointment.status === 'scheduled' ? 'default' : 'secondary'}>
+                    <Badge
+                      variant={getStatusBadgeProps(appointment.status).variant}
+                      className={getStatusBadgeProps(appointment.status).className}
+                    >
                       {appointment.status}
                     </Badge>
                     <Button

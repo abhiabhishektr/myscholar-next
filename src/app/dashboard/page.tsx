@@ -9,13 +9,44 @@ import {
 import { Button } from "@/components/ui/button";
 import { Shield, Users, Mail, Settings, Code } from "lucide-react";
 import Link from "next/link";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { UserAppointments } from "@/components/dashboard/user-appointments";
 
-const DashboardPage = () => {
+const DashboardPage = async () => {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* User Info */}
+        {session?.user && (
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold mb-2">
+              Welcome, {session.user.name}!
+            </h1>
+            <p className="text-muted-foreground">
+              Role: <span className="capitalize">{session.user.role}</span>
+            </p>
+          </div>
+        )}
+
+        {/* User Appointments */}
+        {session?.user && (
+          <div className="mb-8">
+            <UserAppointments currentUser={{
+              id: session.user.id,
+              name: session.user.name,
+              email: session.user.email,
+              role: session.user.role || 'user'
+            }} />
+          </div>
+        )}
+
         {/* Quick Actions */}
         <Card className="mb-12">
           <CardHeader>
