@@ -103,7 +103,12 @@ export function TimetableManager({ students, teachers, subjects: initialSubjects
           </TabsList>
 
           <TabsContent value="view" className="mt-6">
-            <TimetableWeekView studentId={selectedStudentId} key={refreshKey} />
+            <TimetableWeekView 
+              studentId={selectedStudentId} 
+              teachers={teachers}
+              subjects={subjects}
+              key={refreshKey} 
+            />
           </TabsContent>
 
           <TabsContent value="create" className="mt-6">

@@ -22,6 +22,9 @@ export type CreateTimetableEntrySchema = z.infer<typeof createTimetableEntrySche
 export const updateTimetableEntrySchema = z.object({
   teacherId: z.string().optional(),
   subjectId: z.string().optional(),
+  day: z
+    .enum(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
+    .optional(),
   startTime: z.string().regex(timeRegex, 'Invalid time format. Use HH:MM').optional(),
   endTime: z.string().regex(timeRegex, 'Invalid time format. Use HH:MM').optional(),
   notes: z.string().optional(),

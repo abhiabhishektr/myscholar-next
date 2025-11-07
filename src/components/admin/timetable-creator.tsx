@@ -1,15 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Save } from 'lucide-react';
+import { Plus, Trash2, Save, Pencil } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { TeacherSelector } from './teacher-selector';
+import { TimetableEditDialog } from './timetable-edit-dialog';
 import type { UserWithDetails } from '@/utils/users';
 
 interface TimetableCreatorProps {
@@ -32,6 +33,19 @@ interface TimetableEntry {
   notes: string;
 }
 
+interface ExistingTimetableEntry {
+  id: string;
+  studentId: string;
+  teacherId: string;
+  subjectId: string;
+  subjectName: string;
+  day: string;
+  startTime: string;
+  endTime: string;
+  notes: string | null;
+  isActive: boolean;
+}
+
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 const DEFAULT_ENTRY: TimetableEntry = {
@@ -46,6 +60,30 @@ const DEFAULT_ENTRY: TimetableEntry = {
 export function TimetableCreator({ studentId, teachers, subjects, onSuccess }: TimetableCreatorProps) {
   const [entries, setEntries] = useState<TimetableEntry[]>([{ ...DEFAULT_ENTRY }]);
   const [saving, setSaving] = useState(false);
+  const [existingEntries, setExistingEntries] = useState<ExistingTimetableEntry[]>([]);
+  const [loadingExisting, setLoadingExisting] = useState(true);
+  const [editEntry, setEditEntry] = useState<ExistingTimetableEntry | null>(null);
+
+  // Fetch existing timetable entries
+  useEffect(() => {
+    const fetchExisting = async () => {
+      try {
+        setLoadingExisting(true);
+        const response = await fetch(`/api/timetable?studentId=${studentId}`);
+        const data = await response.json();
+
+        if (data.success) {
+          setExistingEntries(data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching existing entries:', error);
+      } finally {
+        setLoadingExisting(false);
+      }
+    };
+
+    fetchExisting();
+  }, [studentId]);
 
   const addEntry = () => {
     setEntries([...entries, { ...DEFAULT_ENTRY }]);
@@ -99,6 +137,12 @@ export function TimetableCreator({ studentId, teachers, subjects, onSuccess }: T
       if (response.ok && data.success) {
         toast.success(data.message || 'Timetable created successfully!');
         setEntries([{ ...DEFAULT_ENTRY }]);
+        // Refresh existing entries
+        const refreshResponse = await fetch(`/api/timetable?studentId=${studentId}`);
+        const refreshData = await refreshResponse.json();
+        if (refreshData.success) {
+          setExistingEntries(refreshData.data);
+        }
         onSuccess();
       } else {
         toast.error(data.error || 'Failed to create timetable');
@@ -111,6 +155,41 @@ export function TimetableCreator({ studentId, teachers, subjects, onSuccess }: T
     }
   };
 
+  const handleEditSuccess = async () => {
+    // Refresh existing entries after edit
+    try {
+      const response = await fetch(`/api/timetable?studentId=${studentId}`);
+      const data = await response.json();
+      if (data.success) {
+        setExistingEntries(data.data);
+      }
+      onSuccess();
+    } catch (error) {
+      console.error('Error refreshing entries:', error);
+    }
+  };
+
+  const handleDeleteExisting = async (id: string) => {
+    try {
+      const response = await fetch(`/api/timetable/${id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Entry deleted successfully');
+        setExistingEntries(existingEntries.filter((entry) => entry.id !== id));
+        onSuccess();
+      } else {
+        toast.error(data.error || 'Failed to delete entry');
+      }
+    } catch (error) {
+      toast.error('Error deleting entry');
+      console.error(error);
+    }
+  };
+
   const groupedEntries = DAYS_OF_WEEK.map((day) => ({
     day,
     entries: entries
@@ -120,6 +199,77 @@ export function TimetableCreator({ studentId, teachers, subjects, onSuccess }: T
 
   return (
     <div className="space-y-6">
+      {/* Existing Timetable Entries */}
+      {!loadingExisting && existingEntries.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Current Timetable</CardTitle>
+            <CardDescription>
+              {existingEntries.length} existing {existingEntries.length === 1 ? 'entry' : 'entries'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {existingEntries.map((entry) => (
+                <Card key={entry.id} className="border-muted">
+                  <CardContent className="pt-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 grid gap-3 sm:grid-cols-2 md:grid-cols-4">
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Day</Label>
+                          <p className="font-medium">{entry.day}</p>
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Subject</Label>
+                          <p className="font-medium">{entry.subjectName}</p>
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Time</Label>
+                          <p className="font-medium">
+                            {entry.startTime} - {entry.endTime}
+                          </p>
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Teacher</Label>
+                          <p className="font-medium">
+                            {teachers.find((t) => t.id === entry.teacherId)?.name || 'Unknown'}
+                          </p>
+                        </div>
+                        {entry.notes && (
+                          <div className="sm:col-span-2 md:col-span-4">
+                            <Label className="text-xs text-muted-foreground">Notes</Label>
+                            <p className="text-sm">{entry.notes}</p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEditEntry(entry)}
+                        >
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteExisting(entry.id)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4 text-destructive" />
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Create New Entries */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -344,6 +494,16 @@ export function TimetableCreator({ studentId, teachers, subjects, onSuccess }: T
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Dialog */}
+      <TimetableEditDialog
+        open={editEntry !== null}
+        onOpenChange={(open) => !open && setEditEntry(null)}
+        entry={editEntry}
+        teachers={teachers}
+        subjects={subjects}
+        onSuccess={handleEditSuccess}
+      />
     </div>
   );
 }

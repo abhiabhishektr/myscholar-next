@@ -120,6 +120,7 @@ export async function updateTimetableEntry(
   data: {
     teacherId?: string;
     subjectId?: string;
+    day?: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
     startTime?: string;
     endTime?: string;
     notes?: string;

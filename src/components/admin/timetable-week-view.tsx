@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Clock, BookOpen, Trash2 } from 'lucide-react';
+import { Clock, BookOpen, Trash2, Pencil } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { TimetableEditDialog } from './timetable-edit-dialog';
+import type { UserWithDetails } from '@/utils/users';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,11 +35,22 @@ interface TimetableEntry {
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-export function TimetableWeekView({ studentId }: { studentId: string }) {
+interface TimetableWeekViewProps {
+  studentId: string;
+  teachers: UserWithDetails[];
+  subjects: Array<{
+    id: string;
+    name: string;
+    description: string | null;
+  }>;
+}
+
+export function TimetableWeekView({ studentId, teachers, subjects }: TimetableWeekViewProps) {
   const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [editEntry, setEditEntry] = useState<TimetableEntry | null>(null);
 
   const fetchTimetable = async () => {
     try {
@@ -153,14 +166,24 @@ export function TimetableWeekView({ studentId }: { studentId: string }) {
                               <p className="text-xs text-muted-foreground line-clamp-2">{entry.notes}</p>
                             )}
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => setDeleteId(entry.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => setEditEntry(entry)}
+                            >
+                              <Pencil className="h-4 w-4 text-blue-600" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => setDeleteId(entry.id)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))
@@ -186,6 +209,17 @@ export function TimetableWeekView({ studentId }: { studentId: string }) {
         </Card>
       )}
 
+      {/* Edit Dialog */}
+      <TimetableEditDialog
+        open={editEntry !== null}
+        onOpenChange={(open) => !open && setEditEntry(null)}
+        entry={editEntry}
+        teachers={teachers}
+        subjects={subjects}
+        onSuccess={fetchTimetable}
+      />
+
+      {/* Delete Dialog */}
       <AlertDialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
