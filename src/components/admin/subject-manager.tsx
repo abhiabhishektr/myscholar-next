@@ -69,26 +69,45 @@ export function SubjectManager({ open, onOpenChange, subjects, onSubjectsUpdated
       return;
     }
 
+    if (newSubjectName.length > 100) {
+      toast.error('Subject name must be less than 100 characters');
+      return;
+    }
+
+    if (newSubjectDescription && newSubjectDescription.length > 500) {
+      toast.error('Description must be less than 500 characters');
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await fetch('/api/subjects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: newSubjectName,
-          description: newSubjectDescription || null,
+          name: newSubjectName.trim(),
+          description: newSubjectDescription.trim() || null,
         }),
       });
 
       const data = await response.json();
+
+      if (!response.ok) {
+        // Handle validation errors from backend
+        if (data.details) {
+          const errorMessages = data.details.map((err: any) => err.message).join(', ');
+          toast.error(errorMessages);
+        } else {
+          toast.error(data.error || 'Failed to add subject');
+        }
+        return;
+      }
 
       if (data.success) {
         toast.success('Subject added successfully');
         setNewSubjectName('');
         setNewSubjectDescription('');
         fetchSubjects();
-      } else {
-        toast.error(data.error || 'Failed to add subject');
       }
     } catch (error) {
       toast.error('Error adding subject');
@@ -101,25 +120,48 @@ export function SubjectManager({ open, onOpenChange, subjects, onSubjectsUpdated
   const handleUpdateSubject = async () => {
     if (!editingSubject) return;
 
+    if (!editingSubject.name.trim()) {
+      toast.error('Subject name is required');
+      return;
+    }
+
+    if (editingSubject.name.length > 100) {
+      toast.error('Subject name must be less than 100 characters');
+      return;
+    }
+
+    if (editingSubject.description && editingSubject.description.length > 500) {
+      toast.error('Description must be less than 500 characters');
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await fetch(`/api/subjects/${editingSubject.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: editingSubject.name,
-          description: editingSubject.description || null,
+          name: editingSubject.name.trim(),
+          description: editingSubject.description?.trim() || null,
         }),
       });
 
       const data = await response.json();
 
+      if (!response.ok) {
+        if (data.details) {
+          const errorMessages = data.details.map((err: any) => err.message).join(', ');
+          toast.error(errorMessages);
+        } else {
+          toast.error(data.error || 'Failed to update subject');
+        }
+        return;
+      }
+
       if (data.success) {
         toast.success('Subject updated successfully');
         setEditingSubject(null);
         fetchSubjects();
-      } else {
-        toast.error(data.error || 'Failed to update subject');
       }
     } catch (error) {
       toast.error('Error updating subject');

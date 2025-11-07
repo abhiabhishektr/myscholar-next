@@ -11,12 +11,18 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = createSubjectSchema.parse(body);
 
-    const subject = await createSubject(validatedData);
+    const subject = await createSubject({
+      name: validatedData.name,
+      description: validatedData.description || undefined,
+    });
     return NextResponse.json({ success: true, data: subject });
   } catch (error: any) {
     if (error instanceof ZodError) {
       return NextResponse.json(
-        { error: 'Validation error', details: error.errors },
+        {
+          error: 'Validation error',
+          details: error.errors.map((err) => ({ field: err.path.join('.'), message: err.message })),
+        },
         { status: 400 },
       );
     }

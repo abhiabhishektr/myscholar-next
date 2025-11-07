@@ -49,8 +49,15 @@ export const bulkCreateTimetableSchema = z.object({
 export type BulkCreateTimetableSchema = z.infer<typeof bulkCreateTimetableSchema>;
 
 export const createSubjectSchema = z.object({
-  name: z.string().min(1, 'Subject name is required').max(100),
-  description: z.string().max(500).optional(),
+  name: z
+    .string()
+    .min(1, 'Subject name is required')
+    .max(100, 'Subject name must be less than 100 characters'),
+  description: z
+    .string()
+    .max(500, 'Description must be less than 500 characters')
+    .optional()
+    .nullable(),
 });
 
 export type CreateSubjectSchema = z.infer<typeof createSubjectSchema>;

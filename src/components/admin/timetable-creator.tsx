@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Save } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { TeacherSelector } from './teacher-selector';
 import type { UserWithDetails } from '@/utils/users';
 
 interface TimetableCreatorProps {
@@ -187,21 +188,12 @@ export function TimetableCreator({ studentId, teachers, subjects, onSuccess }: T
 
                           <div className="space-y-1">
                             <Label className="text-xs">Teacher</Label>
-                            <Select
-                              value={teacherId}
-                              onValueChange={(value) => updateEntry(index, 'teacherId', value)}
-                            >
-                              <SelectTrigger className="h-8 text-xs">
-                                <SelectValue placeholder="Select teacher" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {teachers.map((teacher) => (
-                                  <SelectItem key={teacher.id} value={teacher.id} className="text-xs">
-                                    {teacher.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            <TeacherSelector
+                              teachers={teachers}
+                              selectedTeacherId={teacherId}
+                              onTeacherChange={(value) => updateEntry(index, 'teacherId', value)}
+                              className="h-8 w-full text-xs"
+                            />
                           </div>
 
                           <div className="grid grid-cols-2 gap-2">
@@ -287,21 +279,12 @@ export function TimetableCreator({ studentId, teachers, subjects, onSuccess }: T
 
                     <div className="space-y-2">
                       <Label>Teacher *</Label>
-                      <Select
-                        value={entry.teacherId}
-                        onValueChange={(value) => updateEntry(index, 'teacherId', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {teachers.map((teacher) => (
-                            <SelectItem key={teacher.id} value={teacher.id}>
-                              {teacher.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <TeacherSelector
+                        teachers={teachers}
+                        selectedTeacherId={entry.teacherId}
+                        onTeacherChange={(value) => updateEntry(index, 'teacherId', value)}
+                        className="w-full"
+                      />
                     </div>
 
                     <div className="space-y-2">

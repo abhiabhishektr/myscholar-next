@@ -34,7 +34,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const body = await request.json();
     const validatedData = createSubjectSchema.partial().parse(body);
 
-    const updatedSubject = await updateSubject(id, validatedData);
+    const updatedSubject = await updateSubject(id, {
+      name: validatedData.name,
+      description: validatedData.description || undefined,
+    });
 
     if (!updatedSubject) {
       return NextResponse.json({ error: 'Subject not found' }, { status: 404 });
@@ -48,7 +51,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   } catch (error: any) {
     if (error instanceof ZodError) {
       return NextResponse.json(
-        { error: 'Validation error', details: error.errors },
+        {
+          error: 'Validation error',
+          details: error.errors.map((err) => ({ field: err.path.join('.'), message: err.message })),
+        },
         { status: 400 },
       );
     }
