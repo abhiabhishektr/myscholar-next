@@ -1,5 +1,5 @@
 import { db } from './index';
-import { timetable, subject } from './schema';
+import { timetable, subject, user } from './schema';
 import { eq, and, isNull } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 
@@ -81,6 +81,7 @@ export async function getTimetableByStudent(studentId: string) {
       teacherId: timetable.teacherId,
       subjectId: timetable.subjectId,
       subjectName: subject.name,
+      teacherName: user.name,
       day: timetable.day,
       startTime: timetable.startTime,
       endTime: timetable.endTime,
@@ -90,6 +91,7 @@ export async function getTimetableByStudent(studentId: string) {
     })
     .from(timetable)
     .leftJoin(subject, eq(timetable.subjectId, subject.id))
+    .leftJoin(user, eq(timetable.teacherId, user.id))
     .where(
       and(
         eq(timetable.studentId, studentId),

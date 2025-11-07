@@ -66,6 +66,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, data: students });
     }
 
+    if (action === 'search-students') {
+      // Search all students by name
+      const query = searchParams.get('query') || '';
+      const { users: allStudents } = await getUsers({ role: 'student', limit: 1000 });
+
+      let filteredStudents = allStudents;
+
+      if (query.trim()) {
+        const searchTerm = query.toLowerCase().trim();
+        filteredStudents = allStudents.filter(
+          (student) =>
+            student.name.toLowerCase().includes(searchTerm) ||
+            student.email.toLowerCase().includes(searchTerm),
+        );
+      }
+
+      // Limit results to prevent overwhelming the UI
+      const limitedStudents = filteredStudents.slice(0, 50);
+
+      return NextResponse.json({ success: true, data: limitedStudents });
+    }
+
     if (action === 'student-timetable') {
       const studentId = searchParams.get('studentId');
       if (!studentId) {

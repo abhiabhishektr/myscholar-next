@@ -5,7 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Clock, Calendar, Users, BookOpen, Eye, ChevronRight } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Clock, Calendar, Users, BookOpen, Eye, ChevronRight, Search, User } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import type { UserWithDetails } from '@/utils/users';
 
@@ -28,6 +30,7 @@ interface StudentTimetableEntry {
   teacherId: string;
   subjectId: string;
   subjectName: string;
+  teacherName: string;
   day: string;
   startTime: string;
   endTime: string;
@@ -55,6 +58,11 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
   const [loading, setLoading] = useState(true);
   const [loadingTimetable, setLoadingTimetable] = useState(false);
   const [showTimetableDialog, setShowTimetableDialog] = useState(false);
+
+  // Search functionality
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<UserWithDetails[]>([]);
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -85,6 +93,39 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const searchStudents = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    try {
+      setSearching(true);
+      const response = await fetch(`/api/teacher?action=search-students&query=${encodeURIComponent(query)}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setSearchResults(data.data);
+      } else {
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error('Error searching students:', error);
+      setSearchResults([]);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleSearchInputChange = (value: string) => {
+    setSearchQuery(value);
+    // Debounce search
+    const timeoutId = setTimeout(() => {
+      searchStudents(value);
+    }, 300);
+    return () => clearTimeout(timeoutId);
   };
 
   const fetchStudentTimetable = async (studentId: string) => {
@@ -324,6 +365,86 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
           </div>
         </div>
 
+        {/* Student Search and Timetable Viewer */}
+        <div className="mt-8">
+          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900">
+                  <Search className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl">Search Student Timetables</CardTitle>
+                  <CardDescription>Find and view any student&apos;s schedule</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* Search Input */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search students by name or email..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      handleSearchInputChange(e.target.value);
+                    }}
+                    className="pl-10"
+                  />
+                </div>
+
+                {/* Search Results */}
+                {searchQuery && (
+                  <div className="space-y-2">
+                    {searching ? (
+                      <div className="flex items-center justify-center py-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                        <span className="ml-2 text-sm text-gray-500">Searching...</span>
+                      </div>
+                    ) : searchResults.length > 0 ? (
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {searchResults.map((student) => (
+                          <div
+                            key={student.id}
+                            className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                            onClick={() => handleViewStudentTimetable(student)}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                                <span className="text-white font-semibold text-xs">
+                                  {student.name.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                              <div>
+                                <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">
+                                  {student.name}
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  {student.email}
+                                </p>
+                              </div>
+                            </div>
+                            <Button variant="ghost" size="sm">
+                              <Eye className="w-4 h-4 mr-1" />
+                              View Timetable
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : searchQuery.length > 2 ? (
+                      <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                        No students found matching &quot;{searchQuery}&quot;
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Student Timetable Dialog */}
         <Dialog open={showTimetableDialog} onOpenChange={setShowTimetableDialog}>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
@@ -381,10 +502,21 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
                                 <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
                                   <BookOpen className="w-6 h-6 text-white" />
                                 </div>
-                                <div>
+                                <div className="flex-1">
                                   <h4 className="font-semibold text-gray-900 dark:text-gray-100">
                                     {cls.subjectName}
                                   </h4>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <User className="w-3 h-3 text-gray-500" />
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                      {cls.teacherName || 'Unknown Teacher'}
+                                      {cls.teacherId === teacher.id && (
+                                        <Badge variant="secondary" className="ml-2 text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                          You
+                                        </Badge>
+                                      )}
+                                    </p>
+                                  </div>
                                   <p className="text-sm text-gray-500 dark:text-gray-400">
                                     {formatTime(cls.startTime)} - {formatTime(cls.endTime)}
                                   </p>
