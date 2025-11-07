@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { TeacherDashboard } from '@/components/dashboard/teacher-dashboard';
+import TeacherLayout from '@/components/dashboard/teacher-layout';
 
 export default async function TeacherDashboardPage() {
   const session = await auth.api.getSession({
@@ -13,14 +14,18 @@ export default async function TeacherDashboardPage() {
     redirect('/auth/login');
   }
 
+  const teacher = {
+    id: session.user.id,
+    name: session.user.name,
+    email: session.user.email,
+    role: session.user.role || 'teacher'
+  };
+
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <TeacherDashboard teacher={{
-        id: session.user.id,
-        name: session.user.name,
-        email: session.user.email,
-        role: session.user.role || 'teacher'
-      }} />
-    </Suspense>
+    <TeacherLayout teacher={teacher}>
+      <Suspense fallback={<div>Loading...</div>}>
+        <TeacherDashboard teacher={teacher} />
+      </Suspense>
+    </TeacherLayout>
   );
 }

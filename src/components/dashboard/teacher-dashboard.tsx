@@ -63,6 +63,7 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<UserWithDetails[]>([]);
   const [searching, setSearching] = useState(false);
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     fetchDashboardData();
@@ -119,13 +120,25 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
     }
   };
 
-  const handleSearchInputChange = (value: string) => {
-    setSearchQuery(value);
-    // Debounce search
-    const timeoutId = setTimeout(() => {
-      searchStudents(value);
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+
+    // Clear previous timeout
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+
+    // Set new timeout for debounced search
+    const timeout = setTimeout(() => {
+      if (query.trim()) {
+        searchStudents(query.trim());
+      } else {
+        setSearchResults([]);
+      }
     }, 300);
-    return () => clearTimeout(timeoutId);
+
+    setSearchTimeout(timeout);
   };
 
   const fetchStudentTimetable = async (studentId: string) => {
@@ -183,45 +196,67 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-blue-900 dark:to-indigo-900">
+    <div className="flex-1 overflow-auto">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-600 rounded-3xl shadow-2xl p-8">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32"></div>
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24"></div>
+        {/* Welcome Header */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Welcome back, {teacher.name.split(' ')[0]}!
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Here&apos;s an overview of your teaching schedule
+          </p>
+        </div>
 
-            <div className="relative z-10">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <p className="text-blue-100 text-sm font-medium mb-2">Teacher Dashboard</p>
-                  <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 drop-shadow-lg">
-                    Welcome back, {teacher.name.split(' ')[0]}!
-                  </h1>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm border border-white/30">
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                      <span className="text-white font-semibold">Active Teacher</span>
-                    </div>
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm border border-white/30">
-                      <BookOpen className="w-4 h-4 text-white" />
-                      <span className="text-white/90 text-sm">
-                        {upcomingClasses.length} upcoming classes
-                      </span>
-                    </div>
-                  </div>
+        {/* Stats Overview */}
+        <div className="grid gap-4 md:grid-cols-3 mb-8">
+          <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-500 to-blue-600">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-blue-100">Upcoming Classes</p>
+                  <h3 className="text-3xl font-bold text-white mt-2">
+                    {upcomingClasses.length}
+                  </h3>
                 </div>
-
-                <div className="hidden md:block">
-                  <div className="w-24 h-24 rounded-full bg-white/20 backdrop-blur-sm border-4 border-white/30 flex items-center justify-center shadow-xl">
-                    <span className="text-4xl font-bold text-white">
-                      {teacher.name.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
+                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-white" />
                 </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-lg border-0 bg-gradient-to-br from-purple-500 to-purple-600">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-purple-100">Total Students</p>
+                  <h3 className="text-3xl font-bold text-white mt-2">
+                    {students.length}
+                  </h3>
+                </div>
+                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                  <Users className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-lg border-0 bg-gradient-to-br from-indigo-500 to-indigo-600">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-indigo-100">Active Subjects</p>
+                  <h3 className="text-3xl font-bold text-white mt-2">
+                    {new Set(upcomingClasses.map(c => c.subjectId)).size}
+                  </h3>
+                </div>
+                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                  <BookOpen className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-3">
@@ -387,59 +422,56 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
                   <Input
                     placeholder="Search students by name or email..."
                     value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value);
-                      handleSearchInputChange(e.target.value);
-                    }}
+                    onChange={handleSearchInputChange}
                     className="pl-10"
                   />
                 </div>
 
                 {/* Search Results */}
-                {searchQuery && (
-                  <div className="space-y-2">
-                    {searching ? (
-                      <div className="flex items-center justify-center py-4">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                        <span className="ml-2 text-sm text-gray-500">Searching...</span>
-                      </div>
-                    ) : searchResults.length > 0 ? (
-                      <div className="space-y-2 max-h-60 overflow-y-auto">
-                        {searchResults.map((student) => (
-                          <div
-                            key={student.id}
-                            className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
-                            onClick={() => handleViewStudentTimetable(student)}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                                <span className="text-white font-semibold text-xs">
-                                  {student.name.charAt(0).toUpperCase()}
-                                </span>
-                              </div>
-                              <div>
-                                <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">
-                                  {student.name}
-                                </p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                  {student.email}
-                                </p>
-                              </div>
-                            </div>
-                            <Button variant="ghost" size="sm">
-                              <Eye className="w-4 h-4 mr-1" />
-                              View Timetable
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    ) : searchQuery.length > 2 ? (
-                      <div className="text-center py-4 text-gray-500 dark:text-gray-400">
-                        No students found matching &quot;{searchQuery}&quot;
-                      </div>
-                    ) : null}
+                {searching ? (
+                  <div className="flex items-center justify-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                    <span className="ml-2 text-sm text-gray-500">Searching...</span>
                   </div>
-                )}
+                ) : searchQuery && searchResults.length > 0 ? (
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {searchResults.map((student) => (
+                      <div
+                        key={student.id}
+                        className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                        onClick={() => handleViewStudentTimetable(student)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                            <span className="text-white font-semibold text-xs">
+                              {student.name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">
+                              {student.name}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {student.email}
+                            </p>
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="sm">
+                          <Eye className="w-4 h-4 mr-1" />
+                          View Timetable
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : searchQuery && searchQuery.length >= 2 ? (
+                  <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                    No students found matching &quot;{searchQuery}&quot;
+                  </div>
+                ) : searchQuery && searchQuery.length < 2 ? (
+                  <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
+                    Type at least 2 characters to search
+                  </div>
+                ) : null}
               </div>
             </CardContent>
           </Card>
