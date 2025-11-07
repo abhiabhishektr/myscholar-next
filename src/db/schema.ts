@@ -84,3 +84,44 @@ export const appointment = pgTable('appointment', {
     .$defaultFn(() => new Date())
     .notNull(),
 });
+
+export const subject = pgTable('subject', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  createdAt: timestamp('created_at')
+    .$defaultFn(() => new Date())
+    .notNull(),
+  updatedAt: timestamp('updated_at')
+    .$defaultFn(() => new Date())
+    .notNull(),
+});
+
+export const timetable = pgTable('timetable', {
+  id: text('id').primaryKey(),
+  studentId: text('student_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  teacherId: text('teacher_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  subjectId: text('subject_id')
+    .notNull()
+    .references(() => subject.id, { onDelete: 'cascade' }),
+  day: text('day', { 
+    enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] 
+  }).notNull(),
+  startTime: text('start_time').notNull(), // Format: "HH:MM" (e.g., "09:00")
+  endTime: text('end_time').notNull(), // Format: "HH:MM" (e.g., "10:30")
+  isActive: boolean('is_active')
+    .$defaultFn(() => true)
+    .notNull(),
+  notes: text('notes'),
+  createdAt: timestamp('created_at')
+    .$defaultFn(() => new Date())
+    .notNull(),
+  updatedAt: timestamp('updated_at')
+    .$defaultFn(() => new Date())
+    .notNull(),
+  deletedAt: timestamp('deleted_at'),
+});

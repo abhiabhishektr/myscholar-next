@@ -29,6 +29,13 @@
       "when": 1761064818658,
       "tag": "0003_overrated_terrax",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1762525843454,
+      "tag": "0004_real_red_ghost",
+      "breakpoints": true
     }
   ]
 }
