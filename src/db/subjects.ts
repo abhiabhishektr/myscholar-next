@@ -3,10 +3,7 @@ import { subject } from './schema';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 
-export async function createSubject(data: {
-  name: string;
-  description?: string;
-}) {
+export async function createSubject(data: { name: string; description?: string }) {
   const result = await db
     .insert(subject)
     .values({ id: randomUUID(), ...data })
@@ -23,10 +20,7 @@ export async function getSubjectById(id: string) {
   return result[0];
 }
 
-export async function updateSubject(
-  id: string,
-  data: { name?: string; description?: string }
-) {
+export async function updateSubject(id: string, data: { name?: string; description?: string }) {
   const result = await db
     .update(subject)
     .set({ ...data, updatedAt: new Date() })

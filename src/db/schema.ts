@@ -108,8 +108,8 @@ export const timetable = pgTable('timetable', {
   subjectId: text('subject_id')
     .notNull()
     .references(() => subject.id, { onDelete: 'cascade' }),
-  day: text('day', { 
-    enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] 
+  day: text('day', {
+    enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
   }).notNull(),
   startTime: text('start_time').notNull(), // Format: "HH:MM" (e.g., "09:00")
   endTime: text('end_time').notNull(), // Format: "HH:MM" (e.g., "10:30")

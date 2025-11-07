@@ -21,12 +21,12 @@ export async function createTimetableEntry(data: {
         isNull(timetable.deletedAt),
         eq(timetable.studentId, data.studentId),
         eq(timetable.day, data.day),
-        eq(timetable.isActive, true)
-      )
+        eq(timetable.isActive, true),
+      ),
     );
 
   // Check for time conflicts
-  const hasConflict = overlapping.some(entry => {
+  const hasConflict = overlapping.some((entry) => {
     const existingStart = entry.startTime;
     const existingEnd = entry.endTime;
     const newStart = data.startTime;
@@ -71,8 +71,8 @@ export async function getTimetableByStudent(studentId: string) {
       and(
         eq(timetable.studentId, studentId),
         isNull(timetable.deletedAt),
-        eq(timetable.isActive, true)
-      )
+        eq(timetable.isActive, true),
+      ),
     )
     .orderBy(timetable.day, timetable.startTime);
 }
@@ -86,8 +86,8 @@ export async function getTimetableByTeacher(teacherId: string) {
       and(
         eq(timetable.teacherId, teacherId),
         isNull(timetable.deletedAt),
-        eq(timetable.isActive, true)
-      )
+        eq(timetable.isActive, true),
+      ),
     )
     .orderBy(timetable.day, timetable.startTime);
 }
@@ -101,7 +101,7 @@ export async function updateTimetableEntry(
     endTime?: string;
     notes?: string;
     isActive?: boolean;
-  }
+  },
 ) {
   const result = await db
     .update(timetable)
@@ -129,13 +129,9 @@ export async function bulkCreateTimetable(
     startTime: string;
     endTime: string;
     notes?: string;
-  }>
+  }>,
 ) {
-  const timetableEntries = entries.map(entry => ({
-    id: randomUUID(),
-    studentId,
-    ...entry,
-  }));
+  const timetableEntries = entries.map((entry) => ({ id: randomUUID(), studentId, ...entry }));
 
   return await db.insert(timetable).values(timetableEntries).returning();
 }
