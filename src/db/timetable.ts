@@ -50,6 +50,29 @@ export async function createTimetableEntry(data: {
   return result[0];
 }
 
+export async function getTimetableById(id: string) {
+  const result = await db
+    .select({
+      id: timetable.id,
+      studentId: timetable.studentId,
+      teacherId: timetable.teacherId,
+      subjectId: timetable.subjectId,
+      subjectName: subject.name,
+      day: timetable.day,
+      startTime: timetable.startTime,
+      endTime: timetable.endTime,
+      isActive: timetable.isActive,
+      notes: timetable.notes,
+      createdAt: timetable.createdAt,
+      updatedAt: timetable.updatedAt,
+    })
+    .from(timetable)
+    .leftJoin(subject, eq(timetable.subjectId, subject.id))
+    .where(and(eq(timetable.id, id), isNull(timetable.deletedAt)))
+    .limit(1);
+  return result[0];
+}
+
 export async function getTimetableByStudent(studentId: string) {
   return await db
     .select({
@@ -131,6 +154,56 @@ export async function bulkCreateTimetable(
     notes?: string;
   }>,
 ) {
+  // Check for overlaps within the submitted entries
+  for (let i = 0; i < entries.length; i++) {
+    for (let j = i + 1; j < entries.length; j++) {
+      const entry1 = entries[i];
+      const entry2 = entries[j];
+
+      if (entry1.day === entry2.day) {
+        const hasConflict =
+          (entry1.startTime >= entry2.startTime && entry1.startTime < entry2.endTime) ||
+          (entry1.endTime > entry2.startTime && entry1.endTime <= entry2.endTime) ||
+          (entry1.startTime <= entry2.startTime && entry1.endTime >= entry2.endTime);
+
+        if (hasConflict) {
+          throw new Error(
+            `Time conflict detected on ${entry1.day}: ${entry1.startTime}-${entry1.endTime} overlaps with ${entry2.startTime}-${entry2.endTime}`,
+          );
+        }
+      }
+    }
+  }
+
+  // Check for overlaps with existing entries
+  for (const entry of entries) {
+    const overlapping = await db
+      .select()
+      .from(timetable)
+      .where(
+        and(
+          isNull(timetable.deletedAt),
+          eq(timetable.studentId, studentId),
+          eq(timetable.day, entry.day),
+          eq(timetable.isActive, true),
+        ),
+      );
+
+    const hasConflict = overlapping.some((existing) => {
+      return (
+        (entry.startTime >= existing.startTime && entry.startTime < existing.endTime) ||
+        (entry.endTime > existing.startTime && entry.endTime <= existing.endTime) ||
+        (entry.startTime <= existing.startTime && entry.endTime >= existing.endTime)
+      );
+    });
+
+    if (hasConflict) {
+      throw new Error(
+        `Timetable entry on ${entry.day} at ${entry.startTime}-${entry.endTime} overlaps with an existing entry`,
+      );
+    }
+  }
+
   const timetableEntries = entries.map((entry) => ({ id: randomUUID(), studentId, ...entry }));
 
   return await db.insert(timetable).values(timetableEntries).returning();
