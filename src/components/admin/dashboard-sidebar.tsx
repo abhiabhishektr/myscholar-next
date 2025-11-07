@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Users, Settings, LogOut, GalleryVerticalEnd, Calendar, CalendarDays, CreditCard } from "lucide-react";
+import { Users, Settings, LogOut, GalleryVerticalEnd, Calendar, CalendarDays, CreditCard, Clock } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 
 import {
@@ -19,6 +19,11 @@ import {
 } from "@/components/ui/sidebar";
 
 const sidebarNavItems = [
+  {
+    href: "/admin/timetable",
+    icon: Clock,
+    label: "Create Timetable",
+  },
   {
     href: "/admin/users",
     icon: Users,
