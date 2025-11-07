@@ -2,12 +2,18 @@ import Navbar from "@/components/landing/navbar";
 import { Mail } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { UserAppointments } from "@/components/dashboard/user-appointments";
 
 const DashboardPage = async () => {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
+
+  // Redirect teachers to their specific dashboard
+  if (session?.user?.role === 'teacher') {
+    redirect('/dashboard/teacher');
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
@@ -21,7 +27,7 @@ const DashboardPage = async () => {
               {/* Decorative Elements */}
               <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32"></div>
               <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24"></div>
-              
+
               {/* Content */}
               <div className="relative z-10">
                 <div className="flex items-start justify-between">
@@ -45,7 +51,7 @@ const DashboardPage = async () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Avatar Section */}
                   <div className="hidden md:block">
                     <div className="w-24 h-24 rounded-full bg-white/20 backdrop-blur-sm border-4 border-white/30 flex items-center justify-center shadow-xl">
