@@ -4,8 +4,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import LoginForm from "@/components/auth/login-form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { GoogleIcon, GithubIcon } from "@/components/ui/icons";
-import { signInWithGithub, signInWithGoogle } from "@/lib/auth-client";
+import { GoogleIcon } from "@/components/ui/icons";
+import { signInWithGoogle } from "@/lib/auth-client";
 import { ArrowRight, BookOpen, GraduationCap, Users } from "lucide-react";
 import Image from "next/image";
 
@@ -104,7 +104,7 @@ const LoginPage = () => {
                 <div className="flex-1 h-px bg-gray-300 dark:bg-gray-700" />
               </div>
               
-              <div className="grid grid-cols-2 gap-3">
+              <div className="flex justify-center">
                 <Button
                   variant="outline"
                   className="border-blue-200 hover:bg-blue-50 hover:border-blue-400 dark:border-blue-800 dark:hover:bg-blue-950"
@@ -113,15 +113,6 @@ const LoginPage = () => {
                 >
                   <GoogleIcon className="mr-2" />
                   Google
-                </Button>
-                <Button
-                  variant="outline"
-                  className="border-blue-200 hover:bg-blue-50 hover:border-blue-400 dark:border-blue-800 dark:hover:bg-blue-950"
-                  type="button"
-                  onClick={signInWithGithub}
-                >
-                  <GithubIcon className="mr-2" />
-                  GitHub
                 </Button>
               </div>
               
