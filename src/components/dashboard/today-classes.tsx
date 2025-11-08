@@ -113,7 +113,7 @@ export function TodayClasses({ teacherId }: TodayClassesProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            Today's Classes
+            Today&apos;s Classes
           </CardTitle>
         </CardHeader>
         <CardContent>

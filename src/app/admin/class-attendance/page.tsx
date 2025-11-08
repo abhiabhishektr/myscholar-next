@@ -3,13 +3,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -29,6 +22,8 @@ import {
   Users
 } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { TeacherSelector } from "@/components/admin/teacher-selector";
+import type { UserWithDetails } from "@/utils/users";
 
 interface AttendanceRecord {
   id: string;
@@ -43,12 +38,6 @@ interface AttendanceRecord {
   duration: string;
   notes: string | null;
   markedAt: string;
-}
-
-interface Teacher {
-  id: string;
-  name: string;
-  email: string;
 }
 
 interface TeacherStats {
@@ -100,11 +89,9 @@ interface TopTeacher {
 export default function ClassAttendancePage() {
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [filteredAttendance, setFilteredAttendance] = useState<AttendanceRecord[]>([]);
-  const [teachers, setTeachers] = useState<Teacher[]>([]);
-  const [subjects, setSubjects] = useState<Array<{ id: string; name: string }>>([]);
+  const [teachers, setTeachers] = useState<UserWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTeacher, setSelectedTeacher] = useState<string>("all");
-  const [selectedSubject, setSelectedSubject] = useState<string>("all");
   const [studentSearch, setStudentSearch] = useState<string>("");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
@@ -118,23 +105,25 @@ export default function ClassAttendancePage() {
   const [overallStats, setOverallStats] = useState<OverallStats | null>(null);
   const [topTeachers, setTopTeachers] = useState<TopTeacher[]>([]);
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showAllStudents, setShowAllStudents] = useState(false);
+  const [showAllSubjects, setShowAllSubjects] = useState(false);
+  const ITEMS_PER_PAGE = 10;
+  const INITIAL_DISPLAY_LIMIT = 5;
+
    
   useEffect(() => {
     fetchTeachers();
-    fetchSubjects();
     fetchAttendance();
     fetchOverallStats();
     fetchTopTeachers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Apply client-side filters when attendance, subject, or student search changes
+  // Apply client-side filters when attendance or student search changes
   useEffect(() => {
     let filtered = [...attendance];
-    
-    if (selectedSubject && selectedSubject !== "all") {
-      filtered = filtered.filter(a => a.subjectId === selectedSubject);
-    }
     
     if (studentSearch.trim()) {
       const search = studentSearch.toLowerCase();
@@ -144,7 +133,8 @@ export default function ClassAttendancePage() {
     }
     
     setFilteredAttendance(filtered);
-  }, [attendance, selectedSubject, studentSearch]);
+    setCurrentPage(1); // Reset to first page when filters change
+  }, [attendance, studentSearch]);
 
   // Small helper to fetch with timeout + retries
   const fetchWithRetry = async (
@@ -182,16 +172,6 @@ export default function ClassAttendancePage() {
     }
   };
 
-  const fetchSubjects = async () => {
-    try {
-      const data = await fetchWithRetry('/api/subjects', {}, 3, 5000);
-      setSubjects(data.subjects || []);
-    } catch (error) {
-      console.error('Error fetching subjects:', error);
-      setSubjects([]);
-    }
-  };
-
   const fetchAttendance = async (filters?: {
     teacherId?: string;
     startDate?: string;
@@ -216,7 +196,15 @@ export default function ClassAttendancePage() {
         3,
         8000
       );
-      setAttendance(data.attendance || []);
+      const records = data.attendance || [];
+      setAttendance(records);
+      
+      // Show warning for large datasets
+      if (records.length > 100) {
+        toast.success(`Loaded ${records.length} records. Use filters for better performance.`, {
+          duration: 4000,
+        });
+      }
     } catch (error) {
       console.error("Error fetching attendance:", error);
       toast.error("Failed to load attendance records — please try again");
@@ -290,6 +278,7 @@ export default function ClassAttendancePage() {
       startDate,
       endDate,
     });
+    setCurrentPage(1); // Reset to first page
     if (selectedTeacher && selectedTeacher !== "all") {
       fetchTeacherStats(selectedTeacher);
     }
@@ -297,11 +286,13 @@ export default function ClassAttendancePage() {
 
   const handleReset = () => {
     setSelectedTeacher("all");
-    setSelectedSubject("all");
     setStudentSearch("");
     setStartDate("");
     setEndDate("");
     setTeacherStats(null);
+    setCurrentPage(1); // Reset to first page
+    setShowAllStudents(false);
+    setShowAllSubjects(false);
     fetchAttendance();
   };
 
@@ -505,22 +496,16 @@ export default function ClassAttendancePage() {
               <CardDescription>Select a teacher to view detailed analytics</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 md:grid-cols-4">
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="teacher-search">Teacher</Label>
-                  <Select value={selectedTeacher} onValueChange={handleTeacherSelect}>
-                    <SelectTrigger id="teacher-search">
-                      <SelectValue placeholder="Select teacher" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Teachers</SelectItem>
-                      {teachers.map((teacher) => (
-                        <SelectItem key={teacher.id} value={teacher.id}>
-                          {teacher.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="space-y-2">
+                  <Label>Teacher</Label>
+                  <TeacherSelector
+                    teachers={teachers}
+                    selectedTeacherId={selectedTeacher}
+                    onTeacherChange={handleTeacherSelect}
+                    placeholder="Search and select teacher..."
+                    className="w-full"
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -541,23 +526,6 @@ export default function ClassAttendancePage() {
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
                   />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="subject-filter">Subject</Label>
-                  <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                    <SelectTrigger id="subject-filter">
-                      <SelectValue placeholder="All subjects" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Subjects</SelectItem>
-                      {subjects.map((subject) => (
-                        <SelectItem key={subject.id} value={subject.id}>
-                          {subject.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
 
                 <div className="space-y-2">
@@ -597,8 +565,11 @@ export default function ClassAttendancePage() {
         <TabsContent value="teacher-details" className="space-y-6">
           {loadingStats ? (
             <Card>
-              <CardContent className="py-8">
-                <div className="text-center text-muted-foreground">Loading teacher statistics...</div>
+              <CardContent className="py-12">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  <p className="text-sm text-muted-foreground">Loading teacher statistics...</p>
+                </div>
               </CardContent>
             </Card>
           ) : teacherStats ? (
@@ -670,14 +641,21 @@ export default function ClassAttendancePage() {
                   <CardTitle>Class Duration Distribution</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-4 gap-4">
-                    {Object.entries(teacherStats.durationBreakdown).map(([duration, count]) => (
-                      <div key={duration} className="text-center p-4 border rounded-lg">
-                        <div className="text-2xl font-bold">{count}</div>
-                        <div className="text-sm text-muted-foreground">{getDurationLabel(duration)}</div>
-                      </div>
-                    ))}
-                  </div>
+                  {Object.keys(teacherStats.durationBreakdown).length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Clock className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>No duration data available</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-4 gap-4">
+                      {Object.entries(teacherStats.durationBreakdown).map(([duration, count]) => (
+                        <div key={duration} className="text-center p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                          <div className="text-2xl font-bold">{count}</div>
+                          <div className="text-sm text-muted-foreground">{getDurationLabel(duration)}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -685,25 +663,52 @@ export default function ClassAttendancePage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Student-wise Breakdown</CardTitle>
-                  <CardDescription>Classes conducted for each student</CardDescription>
+                  <CardDescription>
+                    Classes conducted for each student
+                    {teacherStats.studentStats.length > INITIAL_DISPLAY_LIMIT && 
+                      ` (${teacherStats.studentStats.length} students)`}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    {teacherStats.studentStats.map((student) => (
-                      <div key={student.studentId} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div>
-                          <div className="font-medium">{student.studentName}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {student.subjects.join(", ")}
+                  {teacherStats.studentStats.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>No student data available</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+                        {(showAllStudents 
+                          ? teacherStats.studentStats 
+                          : teacherStats.studentStats.slice(0, INITIAL_DISPLAY_LIMIT)
+                        ).map((student) => (
+                          <div key={student.studentId} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium truncate">{student.studentName}</div>
+                              <div className="text-sm text-muted-foreground truncate">
+                                {student.subjects.join(", ")}
+                              </div>
+                            </div>
+                            <div className="text-right ml-4 shrink-0">
+                              <div className="font-bold">{student.totalClasses} classes</div>
+                              <div className="text-sm text-muted-foreground">{student.totalHours.toFixed(1)} hours</div>
+                            </div>
                           </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold">{student.totalClasses} classes</div>
-                          <div className="text-sm text-muted-foreground">{student.totalHours.toFixed(1)} hours</div>
-                        </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                      {teacherStats.studentStats.length > INITIAL_DISPLAY_LIMIT && (
+                        <div className="mt-4 text-center">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => setShowAllStudents(!showAllStudents)}
+                          >
+                            {showAllStudents ? 'Show Less' : `Show All ${teacherStats.studentStats.length} Students`}
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </CardContent>
               </Card>
 
@@ -711,22 +716,49 @@ export default function ClassAttendancePage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Subject-wise Breakdown</CardTitle>
-                  <CardDescription>Classes per subject</CardDescription>
+                  <CardDescription>
+                    Classes per subject
+                    {teacherStats.subjectStats.length > INITIAL_DISPLAY_LIMIT && 
+                      ` (${teacherStats.subjectStats.length} subjects)`}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    {teacherStats.subjectStats.map((subject) => (
-                      <div key={subject.subjectId} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div>
-                          <div className="font-medium">{subject.subjectName}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {subject.totalHours.toFixed(1)} hours
+                  {teacherStats.subjectStats.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>No subject data available</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid md:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto pr-2">
+                        {(showAllSubjects 
+                          ? teacherStats.subjectStats 
+                          : teacherStats.subjectStats.slice(0, INITIAL_DISPLAY_LIMIT)
+                        ).map((subject) => (
+                          <div key={subject.subjectId} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium truncate">{subject.subjectName}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {subject.totalHours.toFixed(1)} hours
+                              </div>
+                            </div>
+                            <div className="text-2xl font-bold ml-4 shrink-0">{subject.totalClasses}</div>
                           </div>
-                        </div>
-                        <div className="text-2xl font-bold">{subject.totalClasses}</div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                      {teacherStats.subjectStats.length > INITIAL_DISPLAY_LIMIT && (
+                        <div className="mt-4 text-center">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => setShowAllSubjects(!showAllSubjects)}
+                          >
+                            {showAllSubjects ? 'Show Less' : `Show All ${teacherStats.subjectStats.length} Subjects`}
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </CardContent>
               </Card>
 
@@ -786,22 +818,16 @@ export default function ClassAttendancePage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 md:grid-cols-4">
+              <div className="grid gap-4 md:grid-cols-3">
                 <div className="space-y-2">
-                  <Label htmlFor="teacher-filter">Teacher</Label>
-                  <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
-                    <SelectTrigger id="teacher-filter">
-                      <SelectValue placeholder="Select teacher" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Teachers</SelectItem>
-                      {teachers.map((teacher) => (
-                        <SelectItem key={teacher.id} value={teacher.id}>
-                          {teacher.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Teacher</Label>
+                  <TeacherSelector
+                    teachers={teachers}
+                    selectedTeacherId={selectedTeacher}
+                    onTeacherChange={setSelectedTeacher}
+                    placeholder="Search and select teacher..."
+                    className="w-full"
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -825,23 +851,6 @@ export default function ClassAttendancePage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="subject-filter-2">Subject</Label>
-                  <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                    <SelectTrigger id="subject-filter-2">
-                      <SelectValue placeholder="All subjects" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Subjects</SelectItem>
-                      {subjects.map((subject) => (
-                        <SelectItem key={subject.id} value={subject.id}>
-                          {subject.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
                   <Label htmlFor="student-search-2">Student Name</Label>
                   <Input
                     id="student-search-2"
@@ -852,7 +861,7 @@ export default function ClassAttendancePage() {
                   />
                 </div>
 
-                <div className="space-y-2 md:col-span-3">
+                <div className="space-y-2 md:col-span-2">
                   <Label>&nbsp;</Label>
                   <div className="flex gap-2">
                     <Button onClick={handleFilter}>
@@ -884,7 +893,7 @@ export default function ClassAttendancePage() {
                 <div>
                   <CardTitle>Attendance Records</CardTitle>
                   <CardDescription>
-                    Showing {filteredAttendance.length} record{filteredAttendance.length !== 1 ? 's' : ''}
+                    Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, filteredAttendance.length)} of {filteredAttendance.length} record{filteredAttendance.length !== 1 ? 's' : ''}
                     {filteredAttendance.length !== attendance.length && ` (filtered from ${attendance.length} total)`}
                   </CardDescription>
                 </div>
@@ -896,15 +905,21 @@ export default function ClassAttendancePage() {
             </CardHeader>
             <CardContent>
               {loading ? (
-                <div className="text-center py-8 text-muted-foreground">Loading...</div>
+                <div className="flex flex-col items-center gap-3 py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  <p className="text-sm text-muted-foreground">Loading attendance records...</p>
+                </div>
               ) : filteredAttendance.length === 0 ? (
                 <div className="text-center py-12">
                   <Calendar className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
                   <p className="text-muted-foreground">No attendance records found</p>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {filteredAttendance.map((record) => (
+                <>
+                  <div className="space-y-4">
+                    {filteredAttendance
+                      .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+                      .map((record) => (
                     <div
                       key={record.id}
                       className="border rounded-lg p-4 hover:bg-accent/50 transition-colors"
@@ -964,7 +979,35 @@ export default function ClassAttendancePage() {
                       </div>
                     </div>
                   ))}
-                </div>
+                  </div>
+                  
+                  {/* Pagination Controls */}
+                  {filteredAttendance.length > ITEMS_PER_PAGE && (
+                    <div className="flex items-center justify-between mt-6 pt-4 border-t">
+                      <div className="text-sm text-muted-foreground">
+                        Page {currentPage} of {Math.ceil(filteredAttendance.length / ITEMS_PER_PAGE)}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(currentPage - 1)}
+                          disabled={currentPage === 1}
+                        >
+                          Previous
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(currentPage + 1)}
+                          disabled={currentPage === Math.ceil(filteredAttendance.length / ITEMS_PER_PAGE)}
+                        >
+                          Next
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
