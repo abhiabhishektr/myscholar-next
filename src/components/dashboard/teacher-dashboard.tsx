@@ -70,24 +70,48 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
     fetchDashboardData();
   }, []);
 
+  // helper: fetch with timeout + retries
+  const fetchWithRetry = async (
+    url: string,
+    opts: RequestInit = {},
+    retries = 3,
+    timeoutMs = 5000,
+  ) => {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const res = await fetch(url, { ...opts, signal: controller.signal });
+        clearTimeout(id);
+        if (!res.ok) throw new Error(`Status ${res.status}`);
+        return await res.json();
+      } catch (err) {
+        clearTimeout(id);
+        if (attempt === retries) throw err;
+        await new Promise((r) => setTimeout(r, 200 * Math.pow(2, attempt)));
+      }
+    }
+    throw new Error('unreachable');
+  };
+
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
 
       // Fetch upcoming classes
-      const upcomingResponse = await fetch('/api/teacher?action=upcoming');
-      const upcomingData = await upcomingResponse.json();
-
-      if (upcomingData.success) {
-        setUpcomingClasses(upcomingData.data);
+      try {
+        const upcomingData = await fetchWithRetry('/api/teacher?action=upcoming', {}, 2, 4000);
+        if (upcomingData?.success) setUpcomingClasses(upcomingData.data || []);
+      } catch (err) {
+        console.error('Failed to fetch upcoming classes', err);
       }
 
       // Fetch students
-      const studentsResponse = await fetch('/api/teacher?action=students');
-      const studentsData = await studentsResponse.json();
-
-      if (studentsData.success) {
-        setStudents(studentsData.data);
+      try {
+        const studentsData = await fetchWithRetry('/api/teacher?action=students', {}, 2, 4000);
+        if (studentsData?.success) setStudents(studentsData.data || []);
+      } catch (err) {
+        console.error('Failed to fetch students', err);
       }
     } catch (error) {
       toast.error('Failed to load dashboard data');
@@ -105,14 +129,9 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
 
     try {
       setSearching(true);
-      const response = await fetch(`/api/teacher?action=search-students&query=${encodeURIComponent(query)}`);
-      const data = await response.json();
-
-      if (data.success) {
-        setSearchResults(data.data);
-      } else {
-        setSearchResults([]);
-      }
+      const data = await fetchWithRetry(`/api/teacher?action=search-students&query=${encodeURIComponent(query)}`, {}, 2, 4000);
+      if (data?.success) setSearchResults(data.data || []);
+      else setSearchResults([]);
     } catch (error) {
       console.error('Error searching students:', error);
       setSearchResults([]);

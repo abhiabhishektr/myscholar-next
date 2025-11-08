@@ -99,9 +99,13 @@ interface TopTeacher {
 
 export default function ClassAttendancePage() {
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+  const [filteredAttendance, setFilteredAttendance] = useState<AttendanceRecord[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [subjects, setSubjects] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTeacher, setSelectedTeacher] = useState<string>("all");
+  const [selectedSubject, setSelectedSubject] = useState<string>("all");
+  const [studentSearch, setStudentSearch] = useState<string>("");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [activeTab, setActiveTab] = useState("overview");
@@ -114,22 +118,77 @@ export default function ClassAttendancePage() {
   const [overallStats, setOverallStats] = useState<OverallStats | null>(null);
   const [topTeachers, setTopTeachers] = useState<TopTeacher[]>([]);
 
+   
   useEffect(() => {
     fetchTeachers();
+    fetchSubjects();
     fetchAttendance();
     fetchOverallStats();
     fetchTopTeachers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Apply client-side filters when attendance, subject, or student search changes
+  useEffect(() => {
+    let filtered = [...attendance];
+    
+    if (selectedSubject && selectedSubject !== "all") {
+      filtered = filtered.filter(a => a.subjectId === selectedSubject);
+    }
+    
+    if (studentSearch.trim()) {
+      const search = studentSearch.toLowerCase();
+      filtered = filtered.filter(a => 
+        a.studentName?.toLowerCase().includes(search)
+      );
+    }
+    
+    setFilteredAttendance(filtered);
+  }, [attendance, selectedSubject, studentSearch]);
+
+  // Small helper to fetch with timeout + retries
+  const fetchWithRetry = async (
+    url: string,
+    opts: RequestInit = {},
+    retries = 3,
+    timeoutMs = 5000,
+  ) => {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const res = await fetch(url, { ...opts, signal: controller.signal });
+        clearTimeout(id);
+        if (!res.ok) throw new Error(`Status ${res.status}`);
+        return await res.json();
+      } catch (err) {
+        clearTimeout(id);
+        if (attempt === retries) throw err;
+        // exponential backoff
+        await new Promise((r) => setTimeout(r, 200 * Math.pow(2, attempt)));
+      }
+    }
+    throw new Error('unreachable');
+  };
 
   const fetchTeachers = async () => {
     try {
-      const response = await fetch("/api/users?role=teacher");
-      if (!response.ok) throw new Error("Failed to fetch teachers");
-      const data = await response.json();
+      const data = await fetchWithRetry('/api/admin/users?role=teacher', {}, 3, 5000);
       setTeachers(data.users || []);
     } catch (error) {
-      console.error("Error fetching teachers:", error);
-      toast.error("Failed to load teachers");
+      console.error('Error fetching teachers:', error);
+      toast.error('Failed to load teachers — retrying later');
+      setTeachers([]);
+    }
+  };
+
+  const fetchSubjects = async () => {
+    try {
+      const data = await fetchWithRetry('/api/subjects', {}, 3, 5000);
+      setSubjects(data.subjects || []);
+    } catch (error) {
+      console.error('Error fetching subjects:', error);
+      setSubjects([]);
     }
   };
 
@@ -151,14 +210,17 @@ export default function ClassAttendancePage() {
         params.append("endDate", new Date(filters.endDate).toISOString());
       }
 
-      const response = await fetch(`/api/teacher/attendance?${params.toString()}`);
-      if (!response.ok) throw new Error("Failed to fetch attendance");
-      
-      const data = await response.json();
+      const data = await fetchWithRetry(
+        `/api/teacher/attendance?${params.toString()}`,
+        {},
+        3,
+        8000
+      );
       setAttendance(data.attendance || []);
     } catch (error) {
       console.error("Error fetching attendance:", error);
-      toast.error("Failed to load attendance records");
+      toast.error("Failed to load attendance records — please try again");
+      setAttendance([]);
     } finally {
       setLoading(false);
     }
@@ -176,14 +238,17 @@ export default function ClassAttendancePage() {
       if (startDate) params.append('startDate', new Date(startDate).toISOString());
       if (endDate) params.append('endDate', new Date(endDate).toISOString());
 
-      const response = await fetch(`/api/admin/analytics?${params.toString()}`);
-      if (!response.ok) throw new Error("Failed to fetch teacher stats");
-      
-      const data = await response.json();
+      const data = await fetchWithRetry(
+        `/api/admin/analytics?${params.toString()}`,
+        {},
+        3,
+        8000
+      );
       setTeacherStats(data.stats);
     } catch (error) {
       console.error("Error fetching teacher stats:", error);
-      toast.error("Failed to load teacher statistics");
+      toast.error("Failed to load teacher statistics — retrying");
+      setTeacherStats(null);
     } finally {
       setLoadingStats(false);
     }
@@ -192,10 +257,12 @@ export default function ClassAttendancePage() {
   const fetchOverallStats = async () => {
     try {
       const params = new URLSearchParams({ type: 'overall' });
-      const response = await fetch(`/api/admin/analytics?${params.toString()}`);
-      if (!response.ok) throw new Error("Failed to fetch overall stats");
-      
-      const data = await response.json();
+      const data = await fetchWithRetry(
+        `/api/admin/analytics?${params.toString()}`,
+        {},
+        3,
+        8000
+      );
       setOverallStats(data.stats);
     } catch (error) {
       console.error("Error fetching overall stats:", error);
@@ -205,10 +272,12 @@ export default function ClassAttendancePage() {
   const fetchTopTeachers = async () => {
     try {
       const params = new URLSearchParams({ type: 'top-teachers', limit: '5' });
-      const response = await fetch(`/api/admin/analytics?${params.toString()}`);
-      if (!response.ok) throw new Error("Failed to fetch top teachers");
-      
-      const data = await response.json();
+      const data = await fetchWithRetry(
+        `/api/admin/analytics?${params.toString()}`,
+        {},
+        3,
+        8000
+      );
       setTopTeachers(data.teachers || []);
     } catch (error) {
       console.error("Error fetching top teachers:", error);
@@ -228,10 +297,35 @@ export default function ClassAttendancePage() {
 
   const handleReset = () => {
     setSelectedTeacher("all");
+    setSelectedSubject("all");
+    setStudentSearch("");
     setStartDate("");
     setEndDate("");
     setTeacherStats(null);
     fetchAttendance();
+  };
+
+  const applyDatePreset = (preset: "today" | "week" | "month") => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    switch (preset) {
+      case "today":
+        setStartDate(today.toISOString().split("T")[0]);
+        setEndDate(today.toISOString().split("T")[0]);
+        break;
+      case "week":
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - today.getDay()); // Sunday
+        setStartDate(weekStart.toISOString().split("T")[0]);
+        setEndDate(today.toISOString().split("T")[0]);
+        break;
+      case "month":
+        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        setStartDate(monthStart.toISOString().split("T")[0]);
+        setEndDate(today.toISOString().split("T")[0]);
+        break;
+    }
   };
 
   const handleTeacherSelect = (teacherId: string) => {
@@ -275,7 +369,7 @@ export default function ClassAttendancePage() {
 
   const exportToCSV = () => {
     const headers = ["Date", "Teacher", "Student", "Subject", "Start Time", "Duration", "Notes"];
-    const rows = attendance.map((record) => [
+    const rows = filteredAttendance.map((record) => [
       formatDate(record.classDate),
       record.teacherName,
       record.studentName,
@@ -299,10 +393,11 @@ export default function ClassAttendancePage() {
     window.URL.revokeObjectURL(url);
   };
 
-  // Calculate stats from attendance
-  const totalClasses = attendance.length;
-  const uniqueTeachersCount = new Set(attendance.map((a) => a.teacherId)).size;
-  const totalHours = attendance.reduce((sum, record) => {
+  // Calculate stats from filtered attendance for display
+  const displayData = filteredAttendance.length > 0 ? filteredAttendance : attendance;
+  const totalClasses = displayData.length;
+  const uniqueTeachersCount = new Set(displayData.map((a) => a.teacherId)).size;
+  const totalHours = displayData.reduce((sum, record) => {
     const hours: Record<string, number> = {
       "30min": 0.5,
       "1hr": 1,
@@ -447,6 +542,34 @@ export default function ClassAttendancePage() {
                     onChange={(e) => setEndDate(e.target.value)}
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="subject-filter">Subject</Label>
+                  <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                    <SelectTrigger id="subject-filter">
+                      <SelectValue placeholder="All subjects" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Subjects</SelectItem>
+                      {subjects.map((subject) => (
+                        <SelectItem key={subject.id} value={subject.id}>
+                          {subject.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="student-search">Student Name</Label>
+                  <Input
+                    id="student-search"
+                    type="text"
+                    placeholder="Search by student name"
+                    value={studentSearch}
+                    onChange={(e) => setStudentSearch(e.target.value)}
+                  />
+                </div>
               </div>
               <div className="flex gap-2 mt-4">
                 <Button onClick={handleFilter}>
@@ -454,6 +577,16 @@ export default function ClassAttendancePage() {
                 </Button>
                 <Button onClick={handleReset} variant="outline">
                   Reset
+                </Button>
+                <div className="flex-1" />
+                <Button variant="outline" size="sm" onClick={() => applyDatePreset("today")}>
+                  Today
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => applyDatePreset("week")}>
+                  This Week
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => applyDatePreset("month")}>
+                  This Month
                 </Button>
               </div>
             </CardContent>
@@ -692,13 +825,51 @@ export default function ClassAttendancePage() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="subject-filter-2">Subject</Label>
+                  <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                    <SelectTrigger id="subject-filter-2">
+                      <SelectValue placeholder="All subjects" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Subjects</SelectItem>
+                      {subjects.map((subject) => (
+                        <SelectItem key={subject.id} value={subject.id}>
+                          {subject.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="student-search-2">Student Name</Label>
+                  <Input
+                    id="student-search-2"
+                    type="text"
+                    placeholder="Search by student name"
+                    value={studentSearch}
+                    onChange={(e) => setStudentSearch(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-3">
                   <Label>&nbsp;</Label>
                   <div className="flex gap-2">
-                    <Button onClick={handleFilter} className="flex-1">
-                      Apply
+                    <Button onClick={handleFilter}>
+                      Apply Filters
                     </Button>
                     <Button onClick={handleReset} variant="outline">
                       Reset
+                    </Button>
+                    <div className="flex-1" />
+                    <Button variant="outline" size="sm" onClick={() => applyDatePreset("today")}>
+                      Today
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => applyDatePreset("week")}>
+                      This Week
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => applyDatePreset("month")}>
+                      This Month
                     </Button>
                   </div>
                 </div>
@@ -713,10 +884,11 @@ export default function ClassAttendancePage() {
                 <div>
                   <CardTitle>Attendance Records</CardTitle>
                   <CardDescription>
-                    Showing {attendance.length} record{attendance.length !== 1 ? 's' : ''}
+                    Showing {filteredAttendance.length} record{filteredAttendance.length !== 1 ? 's' : ''}
+                    {filteredAttendance.length !== attendance.length && ` (filtered from ${attendance.length} total)`}
                   </CardDescription>
                 </div>
-                <Button onClick={exportToCSV} variant="outline" size="sm" disabled={attendance.length === 0}>
+                <Button onClick={exportToCSV} variant="outline" size="sm" disabled={filteredAttendance.length === 0}>
                   <Download className="h-4 w-4 mr-2" />
                   Export CSV
                 </Button>
@@ -725,14 +897,14 @@ export default function ClassAttendancePage() {
             <CardContent>
               {loading ? (
                 <div className="text-center py-8 text-muted-foreground">Loading...</div>
-              ) : attendance.length === 0 ? (
+              ) : filteredAttendance.length === 0 ? (
                 <div className="text-center py-12">
                   <Calendar className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
                   <p className="text-muted-foreground">No attendance records found</p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {attendance.map((record) => (
+                  {filteredAttendance.map((record) => (
                     <div
                       key={record.id}
                       className="border rounded-lg p-4 hover:bg-accent/50 transition-colors"
