@@ -182,3 +182,286 @@ export async function checkIfClassMarked(
 
   return result.length > 0 ? result[0] : null;
 }
+
+// Get missed classes by comparing scheduled timetable with attendance
+export async function getMissedClasses(
+  teacherId: string,
+  startDate: Date,
+  endDate: Date,
+) {
+  // Get all scheduled classes in the date range
+  const scheduledClasses = await db
+    .select({
+      timetableId: timetable.id,
+      teacherId: timetable.teacherId,
+      teacherName: user.name,
+      studentId: timetable.studentId,
+      studentName: sql<string>`student.name`,
+      subjectId: timetable.subjectId,
+      subjectName: subject.name,
+      day: timetable.day,
+      startTime: timetable.startTime,
+      endTime: timetable.endTime,
+    })
+    .from(timetable)
+    .leftJoin(user, eq(timetable.teacherId, user.id))
+    .leftJoin(sql`${user} as student`, sql`${timetable.studentId} = student.id`)
+    .leftJoin(subject, eq(timetable.subjectId, subject.id))
+    .where(and(eq(timetable.teacherId, teacherId), eq(timetable.isActive, true)));
+
+  // Get all attendance records in the date range
+  const attendanceRecords = await getClassAttendance({
+    teacherId,
+    startDate,
+    endDate,
+  });
+
+  // Calculate which days fall in the date range
+  const missedClasses = [];
+  const currentDate = new Date(startDate);
+  const end = new Date(endDate);
+
+  while (currentDate <= end) {
+    const dayName = currentDate.toLocaleDateString('en-US', {
+      weekday: 'long',
+    }) as
+      | 'Monday'
+      | 'Tuesday'
+      | 'Wednesday'
+      | 'Thursday'
+      | 'Friday'
+      | 'Saturday'
+      | 'Sunday';
+
+    // Find classes scheduled for this day
+    const daySchedule = scheduledClasses.filter((sc) => sc.day === dayName);
+
+    for (const scheduledClass of daySchedule) {
+      // Check if attendance was marked for this class on this date
+      const attended = attendanceRecords.find(
+        (att) =>
+          att.studentId === scheduledClass.studentId &&
+          att.subjectId === scheduledClass.subjectId &&
+          new Date(att.classDate).toDateString() === currentDate.toDateString(),
+      );
+
+      if (!attended && currentDate < new Date()) {
+        // Only mark as missed if the date has passed
+        missedClasses.push({
+          date: new Date(currentDate),
+          dayName,
+          teacherName: scheduledClass.teacherName,
+          studentName: scheduledClass.studentName,
+          subjectName: scheduledClass.subjectName,
+          scheduledStartTime: scheduledClass.startTime,
+          scheduledEndTime: scheduledClass.endTime,
+          timetableId: scheduledClass.timetableId,
+          studentId: scheduledClass.studentId,
+          subjectId: scheduledClass.subjectId,
+        });
+      }
+    }
+
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  return missedClasses;
+}
+
+// Get comprehensive teacher statistics
+export async function getTeacherDetailedStats(
+  teacherId: string,
+  startDate?: Date,
+  endDate?: Date,
+) {
+  const whereConditions = [eq(classAttendance.teacherId, teacherId)];
+
+  if (startDate) {
+    whereConditions.push(gte(classAttendance.classDate, startDate));
+  }
+  if (endDate) {
+    whereConditions.push(lte(classAttendance.classDate, endDate));
+  }
+
+  // Get attendance records
+  const attendance = await getClassAttendance({
+    teacherId,
+    startDate,
+    endDate,
+  });
+
+  // Calculate total hours
+  const durationToHours: Record<string, number> = {
+    '30min': 0.5,
+    '1hr': 1,
+    '1.5hr': 1.5,
+    '2hr': 2,
+  };
+
+  const totalHours = attendance.reduce(
+    (sum, record) => sum + (durationToHours[record.duration] || 0),
+    0,
+  );
+
+  // Get unique students and subjects
+  const uniqueStudents = new Set(attendance.map((a) => a.studentId)).size;
+  const uniqueSubjects = new Set(attendance.map((a) => a.subjectId)).size;
+
+  // Get duration breakdown
+  const durationBreakdown = attendance.reduce(
+    (acc, record) => {
+      acc[record.duration] = (acc[record.duration] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+
+  // Get student-wise breakdown
+  const studentBreakdown = attendance.reduce(
+    (acc, record) => {
+      if (!acc[record.studentId]) {
+        acc[record.studentId] = {
+          studentId: record.studentId,
+          studentName: record.studentName,
+          totalClasses: 0,
+          totalHours: 0,
+          subjects: new Set(),
+        };
+      }
+      acc[record.studentId].totalClasses++;
+      acc[record.studentId].totalHours += durationToHours[record.duration] || 0;
+      if (record.subjectName) {
+        acc[record.studentId].subjects.add(record.subjectName);
+      }
+      return acc;
+    },
+    {} as Record<
+      string,
+      {
+        studentId: string;
+        studentName: string;
+        totalClasses: number;
+        totalHours: number;
+        subjects: Set<string>;
+      }
+    >,
+  );
+
+  const studentStats = Object.values(studentBreakdown).map((s) => ({
+    ...s,
+    subjects: Array.from(s.subjects),
+  }));
+
+  // Get subject-wise breakdown
+  const subjectBreakdown = attendance.reduce(
+    (acc, record) => {
+      const subjectName = record.subjectName || 'Unknown';
+      if (!acc[record.subjectId]) {
+        acc[record.subjectId] = {
+          subjectId: record.subjectId,
+          subjectName: subjectName,
+          totalClasses: 0,
+          totalHours: 0,
+        };
+      }
+      acc[record.subjectId].totalClasses++;
+      acc[record.subjectId].totalHours += durationToHours[record.duration] || 0;
+      return acc;
+    },
+    {} as Record<
+      string,
+      {
+        subjectId: string;
+        subjectName: string;
+        totalClasses: number;
+        totalHours: number;
+      }
+    >,
+  );
+
+  const subjectStats = Object.values(subjectBreakdown);
+
+  // Get missed classes
+  const missed = startDate && endDate 
+    ? await getMissedClasses(teacherId, startDate, endDate)
+    : [];
+
+  // Calculate scheduled vs attended
+  const scheduledClasses = await db
+    .select({
+      count: sql<number>`count(*)::int`,
+    })
+    .from(timetable)
+    .where(and(eq(timetable.teacherId, teacherId), eq(timetable.isActive, true)));
+
+  const weeklyScheduledCount = scheduledClasses[0]?.count || 0;
+
+  return {
+    totalClasses: attendance.length,
+    totalHours,
+    uniqueStudents,
+    uniqueSubjects,
+    durationBreakdown,
+    studentStats,
+    subjectStats,
+    missedClasses: missed,
+    missedCount: missed.length,
+    weeklyScheduledCount,
+    attendanceRate:
+      weeklyScheduledCount > 0
+        ? ((attendance.length / weeklyScheduledCount) * 100).toFixed(1)
+        : '0',
+  };
+}
+
+// Get overall system statistics
+export async function getOverallStats(startDate?: Date, endDate?: Date) {
+  const whereConditions = [];
+
+  if (startDate) {
+    whereConditions.push(gte(classAttendance.classDate, startDate));
+  }
+  if (endDate) {
+    whereConditions.push(lte(classAttendance.classDate, endDate));
+  }
+
+  const stats = await db
+    .select({
+      totalClasses: sql<number>`count(*)::int`,
+      uniqueTeachers: sql<number>`count(distinct ${classAttendance.teacherId})::int`,
+      uniqueStudents: sql<number>`count(distinct ${classAttendance.studentId})::int`,
+      uniqueSubjects: sql<number>`count(distinct ${classAttendance.subjectId})::int`,
+    })
+    .from(classAttendance)
+    .where(whereConditions.length > 0 ? and(...whereConditions) : undefined);
+
+  return stats[0];
+}
+
+// Get top performing teachers
+export async function getTopTeachers(limit: number = 5, startDate?: Date, endDate?: Date) {
+  const whereConditions = [];
+
+  if (startDate) {
+    whereConditions.push(gte(classAttendance.classDate, startDate));
+  }
+  if (endDate) {
+    whereConditions.push(lte(classAttendance.classDate, endDate));
+  }
+
+  const topTeachers = await db
+    .select({
+      teacherId: classAttendance.teacherId,
+      teacherName: user.name,
+      totalClasses: sql<number>`count(*)::int`,
+      uniqueStudents: sql<number>`count(distinct ${classAttendance.studentId})::int`,
+    })
+    .from(classAttendance)
+    .leftJoin(user, eq(classAttendance.teacherId, user.id))
+    .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
+    .groupBy(classAttendance.teacherId, user.name)
+    .orderBy(desc(sql`count(*)`))
+    .limit(limit);
+
+  return topTeachers;
+}
