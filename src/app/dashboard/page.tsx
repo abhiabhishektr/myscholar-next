@@ -3,7 +3,6 @@ import { Mail } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { UserAppointments } from "@/components/dashboard/user-appointments";
 
 const DashboardPage = async () => {
   const session = await auth.api.getSession({
@@ -63,18 +62,6 @@ const DashboardPage = async () => {
                 </div>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* User Appointments */}
-        {session?.user && (
-          <div className="mb-8">
-            <UserAppointments currentUser={{
-              id: session.user.id,
-              name: session.user.name,
-              email: session.user.email,
-              role: session.user.role || 'user'
-            }} />
           </div>
         )}
       </div>
