@@ -184,11 +184,7 @@ export async function checkIfClassMarked(
 }
 
 // Get missed classes by comparing scheduled timetable with attendance
-export async function getMissedClasses(
-  teacherId: string,
-  startDate: Date,
-  endDate: Date,
-) {
+export async function getMissedClasses(teacherId: string, startDate: Date, endDate: Date) {
   // Get all scheduled classes in the date range
   const scheduledClasses = await db
     .select({
@@ -210,11 +206,7 @@ export async function getMissedClasses(
     .where(and(eq(timetable.teacherId, teacherId), eq(timetable.isActive, true)));
 
   // Get all attendance records in the date range
-  const attendanceRecords = await getClassAttendance({
-    teacherId,
-    startDate,
-    endDate,
-  });
+  const attendanceRecords = await getClassAttendance({ teacherId, startDate, endDate });
 
   // Calculate which days fall in the date range
   const missedClasses = [];
@@ -222,9 +214,7 @@ export async function getMissedClasses(
   const end = new Date(endDate);
 
   while (currentDate <= end) {
-    const dayName = currentDate.toLocaleDateString('en-US', {
-      weekday: 'long',
-    }) as
+    const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'long' }) as
       | 'Monday'
       | 'Tuesday'
       | 'Wednesday'
@@ -269,11 +259,7 @@ export async function getMissedClasses(
 }
 
 // Get comprehensive teacher statistics
-export async function getTeacherDetailedStats(
-  teacherId: string,
-  startDate?: Date,
-  endDate?: Date,
-) {
+export async function getTeacherDetailedStats(teacherId: string, startDate?: Date, endDate?: Date) {
   const whereConditions = [eq(classAttendance.teacherId, teacherId)];
 
   if (startDate) {
@@ -284,11 +270,7 @@ export async function getTeacherDetailedStats(
   }
 
   // Get attendance records
-  const attendance = await getClassAttendance({
-    teacherId,
-    startDate,
-    endDate,
-  });
+  const attendance = await getClassAttendance({ teacherId, startDate, endDate });
 
   // Calculate total hours
   const durationToHours: Record<string, number> = {
@@ -370,27 +352,18 @@ export async function getTeacherDetailedStats(
     },
     {} as Record<
       string,
-      {
-        subjectId: string;
-        subjectName: string;
-        totalClasses: number;
-        totalHours: number;
-      }
+      { subjectId: string; subjectName: string; totalClasses: number; totalHours: number }
     >,
   );
 
   const subjectStats = Object.values(subjectBreakdown);
 
   // Get missed classes
-  const missed = startDate && endDate 
-    ? await getMissedClasses(teacherId, startDate, endDate)
-    : [];
+  const missed = startDate && endDate ? await getMissedClasses(teacherId, startDate, endDate) : [];
 
   // Calculate scheduled vs attended
   const scheduledClasses = await db
-    .select({
-      count: sql<number>`count(*)::int`,
-    })
+    .select({ count: sql<number>`count(*)::int` })
     .from(timetable)
     .where(and(eq(timetable.teacherId, teacherId), eq(timetable.isActive, true)));
 

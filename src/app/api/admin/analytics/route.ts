@@ -11,9 +11,7 @@ import { headers } from 'next/headers';
 // GET - Get detailed analytics
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    const session = await auth.api.getSession({ headers: await headers() });
 
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -21,10 +19,7 @@ export async function GET(request: NextRequest) {
 
     // Only admins can access analytics
     if (session.user.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Only admins can access analytics' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Only admins can access analytics' }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -40,10 +35,7 @@ export async function GET(request: NextRequest) {
     switch (type) {
       case 'teacher':
         if (!teacherId) {
-          return NextResponse.json(
-            { error: 'Teacher ID is required' },
-            { status: 400 }
-          );
+          return NextResponse.json({ error: 'Teacher ID is required' }, { status: 400 });
         }
         const teacherStats = await getTeacherDetailedStats(teacherId, start, end);
         return NextResponse.json({ stats: teacherStats }, { status: 200 });
@@ -61,23 +53,17 @@ export async function GET(request: NextRequest) {
         if (!teacherId || !start || !end) {
           return NextResponse.json(
             { error: 'Teacher ID, start date and end date are required for missed classes' },
-            { status: 400 }
+            { status: 400 },
           );
         }
         const missed = await getMissedClasses(teacherId, start, end);
         return NextResponse.json({ missedClasses: missed }, { status: 200 });
 
       default:
-        return NextResponse.json(
-          { error: 'Invalid analytics type' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Invalid analytics type' }, { status: 400 });
     }
   } catch (error) {
     console.error('Error fetching analytics:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch analytics' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch analytics' }, { status: 500 });
   }
 }
