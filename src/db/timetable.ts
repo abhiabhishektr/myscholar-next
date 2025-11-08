@@ -117,6 +117,37 @@ export async function getTimetableByTeacher(teacherId: string) {
     .orderBy(timetable.day, timetable.startTime);
 }
 
+export async function getStudentsByTeacher(teacherId: string) {
+  // Get all unique students who have classes with this teacher
+  const result = await db
+    .selectDistinct({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      emailVerified: user.emailVerified,
+      image: user.image,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      banned: user.banned,
+      banReason: user.banReason,
+      banExpires: user.banExpires,
+    })
+    .from(timetable)
+    .innerJoin(user, eq(timetable.studentId, user.id))
+    .where(
+      and(
+        eq(timetable.teacherId, teacherId),
+        isNull(timetable.deletedAt),
+        eq(timetable.isActive, true),
+        eq(user.role, 'student'),
+      ),
+    )
+    .orderBy(user.name);
+  
+  return result;
+}
+
 export async function updateTimetableEntry(
   id: string,
   data: {

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { getTimetableByTeacher, getTimetableByStudent } from '@/db/timetable';
-import { getUsers } from '@/utils/users';
+import { getTimetableByTeacher, getTimetableByStudent, getStudentsByTeacher } from '@/db/timetable';
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,12 +24,17 @@ export async function GET(request: NextRequest) {
 
       const allClasses = await getTimetableByTeacher(session.user.id);
 
+      // Get student names for all classes
+      const students = await getStudentsByTeacher(session.user.id);
+      const studentMap = new Map(students.map((s) => [s.id, s.name]));
+
       // Filter for today and tomorrow, and only future classes
       const upcomingClasses = allClasses
         .filter((entry) => entry.timetable) // Ensure timetable data exists
         .map((entry) => ({
           ...entry.timetable,
           subjectName: entry.subject?.name || 'Unknown Subject',
+          studentName: studentMap.get(entry.timetable.studentId) || 'Unknown Student',
         }))
         .filter((entry) => {
           if (entry.day !== today && entry.day !== tomorrow) return false;
@@ -50,26 +54,14 @@ export async function GET(request: NextRequest) {
 
     if (action === 'students') {
       // Get all students that have classes with this teacher
-      const teacherClasses = await getTimetableByTeacher(session.user.id);
-      const studentIds = [
-        ...new Set(teacherClasses.filter((c) => c.timetable).map((c) => c.timetable.studentId)),
-      ];
-
-      if (studentIds.length === 0) {
-        return NextResponse.json({ success: true, data: [] });
-      }
-
-      // Get all students and filter by IDs
-      const { users: allStudents } = await getUsers({ role: 'student', limit: 1000 });
-      const students = allStudents.filter((student) => studentIds.includes(student.id));
-
+      const students = await getStudentsByTeacher(session.user.id);
       return NextResponse.json({ success: true, data: students });
     }
 
     if (action === 'search-students') {
-      // Search all students by name
+      // Search students that have classes with this teacher
       const query = searchParams.get('query') || '';
-      const { users: allStudents } = await getUsers({ role: 'student', limit: 1000 });
+      const allStudents = await getStudentsByTeacher(session.user.id);
 
       let filteredStudents = allStudents;
 

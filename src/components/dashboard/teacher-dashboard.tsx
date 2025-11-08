@@ -18,6 +18,7 @@ interface UpcomingClass {
   teacherId: string;
   subjectId: string;
   subjectName: string;
+  studentName: string;
   day: string;
   startTime: string;
   endTime: string;
@@ -60,6 +61,10 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
   const [loadingTimetable, setLoadingTimetable] = useState(false);
   const [showTimetableDialog, setShowTimetableDialog] = useState(false);
 
+  // Attendance stats
+  const [totalClassesTaught, setTotalClassesTaught] = useState(0);
+  const [totalHoursTaught, setTotalHoursTaught] = useState(0);
+
   // Search functionality
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<UserWithDetails[]>([]);
@@ -68,6 +73,7 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
 
   useEffect(() => {
     fetchDashboardData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // helper: fetch with timeout + retries
@@ -112,6 +118,29 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
         if (studentsData?.success) setStudents(studentsData.data || []);
       } catch (err) {
         console.error('Failed to fetch students', err);
+      }
+
+      // Fetch attendance stats
+      try {
+        const attendanceData = await fetchWithRetry('/api/teacher/attendance', {}, 2, 4000);
+        if (attendanceData?.attendance) {
+          const classes = attendanceData.attendance;
+          setTotalClassesTaught(classes.length);
+          
+          // Calculate total hours
+          const hours = classes.reduce((total: number, cls: any) => {
+            const durationMap: Record<string, number> = {
+              '30min': 0.5,
+              '1hr': 1,
+              '1.5hr': 1.5,
+              '2hr': 2,
+            };
+            return total + (durationMap[cls.duration] || 0);
+          }, 0);
+          setTotalHoursTaught(hours);
+        }
+      } catch (err) {
+        console.error('Failed to fetch attendance stats', err);
       }
     } catch (error) {
       toast.error('Failed to load dashboard data');
@@ -229,7 +258,7 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
         </div>
 
         {/* Stats Overview */}
-        <div className="grid gap-4 md:grid-cols-3 mb-8">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
           <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-500 to-blue-600">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -237,6 +266,38 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
                   <p className="text-sm font-medium text-blue-100">Upcoming Classes</p>
                   <h3 className="text-3xl font-bold text-white mt-2">
                     {upcomingClasses.length}
+                  </h3>
+                </div>
+                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-lg border-0 bg-gradient-to-br from-green-500 to-green-600">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-green-100">Classes Taught</p>
+                  <h3 className="text-3xl font-bold text-white mt-2">
+                    {totalClassesTaught}
+                  </h3>
+                </div>
+                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                  <BookOpen className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-lg border-0 bg-gradient-to-br from-orange-500 to-orange-600">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-orange-100">Total Hours</p>
+                  <h3 className="text-3xl font-bold text-white mt-2">
+                    {totalHoursTaught.toFixed(1)}
                   </h3>
                 </div>
                 <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
@@ -257,22 +318,6 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
                 </div>
                 <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
                   <Users className="w-6 h-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-lg border-0 bg-gradient-to-br from-indigo-500 to-indigo-600">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-indigo-100">Active Subjects</p>
-                  <h3 className="text-3xl font-bold text-white mt-2">
-                    {new Set(upcomingClasses.map(c => c.subjectId)).size}
-                  </h3>
-                </div>
-                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
-                  <BookOpen className="w-6 h-6 text-white" />
                 </div>
               </div>
             </CardContent>
@@ -343,6 +388,9 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
                                     <h4 className="font-semibold text-gray-900 dark:text-gray-100">
                                       {cls.subjectName}
                                     </h4>
+                                    <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">
+                                      {cls.studentName}
+                                    </p>
                                     <p className="text-sm text-gray-500 dark:text-gray-400">
                                       {formatTime(cls.startTime)} - {formatTime(cls.endTime)}
                                     </p>
