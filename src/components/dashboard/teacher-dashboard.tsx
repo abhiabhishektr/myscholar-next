@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Clock, Calendar, Users, BookOpen, Eye, ChevronRight, Search, User } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import type { UserWithDetails } from '@/utils/users';
+import { TodayClasses } from './today-classes';
 
 interface UpcomingClass {
   id: string;
@@ -257,6 +258,11 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Today's Classes - New Section */}
+        <div className="mb-8">
+          <TodayClasses teacherId={teacher.id} />
         </div>
 
         <div className="grid gap-8 lg:grid-cols-3">

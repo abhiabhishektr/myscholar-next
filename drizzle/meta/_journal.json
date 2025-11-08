@@ -43,6 +43,13 @@
       "when": 1762620000998,
       "tag": "0005_brave_menace",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1762620901818,
+      "tag": "0006_plain_santa_claus",
+      "breakpoints": true
     }
   ]
 }

@@ -101,3 +101,30 @@ export const timetable = pgTable('timetable', {
     .notNull(),
   deletedAt: timestamp('deleted_at'),
 });
+
+export const classAttendance = pgTable('class_attendance', {
+  id: text('id').primaryKey(),
+  teacherId: text('teacher_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  studentId: text('student_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  subjectId: text('subject_id')
+    .notNull()
+    .references(() => subject.id, { onDelete: 'cascade' }),
+  timetableId: text('timetable_id').references(() => timetable.id, { onDelete: 'set null' }),
+  classDate: timestamp('class_date').notNull(), // The date when class was taken
+  startTime: text('start_time').notNull(), // Actual start time "HH:MM"
+  duration: text('duration', { enum: ['30min', '1hr', '1.5hr', '2hr'] }).notNull(), // Duration of class
+  notes: text('notes'),
+  markedAt: timestamp('marked_at')
+    .$defaultFn(() => new Date())
+    .notNull(), // When attendance was marked
+  createdAt: timestamp('created_at')
+    .$defaultFn(() => new Date())
+    .notNull(),
+  updatedAt: timestamp('updated_at')
+    .$defaultFn(() => new Date())
+    .notNull(),
+});
