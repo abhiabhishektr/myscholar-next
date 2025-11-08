@@ -144,7 +144,7 @@ export async function getStudentsByTeacher(teacherId: string) {
       ),
     )
     .orderBy(user.name);
-  
+
   return result;
 }
 
