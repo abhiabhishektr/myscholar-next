@@ -19,15 +19,15 @@ import {
 } from "@/components/ui/sidebar";
 
 const sidebarNavItems = [
+   {
+    href: "/admin/users",
+    icon: Users,
+    label: "Users",
+  },
   {
     href: "/admin/timetable",
     icon: Clock,
     label: "Create Timetable",
-  },
-  {
-    href: "/admin/users",
-    icon: Users,
-    label: "Users",
   },
   {
     href: "/admin/class-attendance",

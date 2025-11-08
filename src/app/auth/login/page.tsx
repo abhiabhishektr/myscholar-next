@@ -107,7 +107,7 @@ const LoginPage = () => {
               <div className="flex justify-center">
                 <Button
                   variant="outline"
-                  className="border-blue-200 hover:bg-blue-50 hover:border-blue-400 dark:border-blue-800 dark:hover:bg-blue-950"
+                  className="w-full border-blue-200 hover:bg-blue-50 hover:border-blue-400 dark:border-blue-800 dark:hover:bg-blue-950"
                   type="button"
                   onClick={signInWithGoogle}
                 >
