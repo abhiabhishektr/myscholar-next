@@ -9,8 +9,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "myschoolartuition",
-  description: "A Next.js boilerplate for building web applications",
+  title: "MyScholar Tuition",
+  description: "myschoolartuition.com",
 };
 
 export default function RootLayout({
