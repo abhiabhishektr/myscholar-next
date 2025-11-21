@@ -436,9 +436,7 @@ export function UsersTable() {
                             {user.name}
                           </span>
                           <span className="text-xs text-muted-foreground">
-                            {user.email.replace(/^[^@]+/, (match) =>
-                              "*".repeat(match.length),
-                            )}
+                            {user.email}
                           </span>
                         </div>
                       </div>

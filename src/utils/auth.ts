@@ -89,3 +89,28 @@ export async function updateUserRole(userId: string, role: string) {
 
   return res;
 }
+
+export async function changeUserPassword(userId: string, newPassword: string) {
+  const res = await authClient.admin.setUserPassword({ userId, newPassword: newPassword });
+
+  if (res?.error) {
+    throw new Error(res.error.message || 'Failed to change user password');
+  }
+
+  return res;
+}
+
+export async function updateUserName(userId: string, name: string) {
+  const response = await fetch('/api/admin/users/update', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, name }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to update user name');
+  }
+
+  return response.json();
+}

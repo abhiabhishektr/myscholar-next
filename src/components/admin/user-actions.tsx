@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Ban, MoreHorizontal, Trash2, Shield, LogOut } from "lucide-react";
+import { Ban, MoreHorizontal, Trash2, Shield, LogOut, KeyRound, UserPen } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +17,8 @@ import { UserUnbanDialog } from "./user-unban-dialog";
 import { UserDeleteDialog } from "./user-delete-dialog";
 import { UserRevokeSessionsDialog } from "./user-revoke-sessions-dialog";
 import { UserRoleDialog } from "./user-role-dialog";
+import { UserPasswordChangeDialog } from "./user-password-change-dialog";
+import { UserNameEditDialog } from "./user-name-edit-dialog";
 
 interface UserActionsProps {
   user: UserWithDetails;
@@ -30,6 +32,8 @@ export function UserActions({ user, onActionComplete }: UserActionsProps) {
   const [showRevokeSessionsDialog, setShowRevokeSessionsDialog] =
     useState(false);
   const [showRoleDialog, setShowRoleDialog] = useState(false);
+  const [showPasswordChangeDialog, setShowPasswordChangeDialog] = useState(false);
+  const [showNameEditDialog, setShowNameEditDialog] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleDialogClose = (
@@ -55,11 +59,31 @@ export function UserActions({ user, onActionComplete }: UserActionsProps) {
             className="text-xs"
             onClick={() => {
               setDropdownOpen(false);
+              setShowNameEditDialog(true);
+            }}
+          >
+            <UserPen className="mr-2 h-4 w-4" />
+            <span>Edit Name</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="text-xs"
+            onClick={() => {
+              setDropdownOpen(false);
               setShowRoleDialog(true);
             }}
           >
             <Shield className="mr-2 h-4 w-4" />
             <span>Update Role</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="text-xs"
+            onClick={() => {
+              setDropdownOpen(false);
+              setShowPasswordChangeDialog(true);
+            }}
+          >
+            <KeyRound className="mr-2 h-4 w-4" />
+            <span>Change Password</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           {user.banned ? (
@@ -150,6 +174,24 @@ export function UserActions({ user, onActionComplete }: UserActionsProps) {
         isOpen={showRoleDialog}
         onClose={() => {
           handleDialogClose(setShowRoleDialog);
+          onActionComplete();
+        }}
+      />
+
+      <UserPasswordChangeDialog
+        user={user}
+        isOpen={showPasswordChangeDialog}
+        onClose={() => {
+          handleDialogClose(setShowPasswordChangeDialog);
+          onActionComplete();
+        }}
+      />
+
+      <UserNameEditDialog
+        user={user}
+        isOpen={showNameEditDialog}
+        onClose={() => {
+          handleDialogClose(setShowNameEditDialog);
           onActionComplete();
         }}
       />
