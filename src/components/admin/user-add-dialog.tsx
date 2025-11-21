@@ -13,8 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
+import { AlertTriangle, ShieldAlert } from "lucide-react";
 
 interface UserAddDialogProps {
   isOpen: boolean;
@@ -131,6 +132,33 @@ export function UserAddDialog({
             </SelectContent>
           </Select>
         </div>
+
+        {/* Admin Role Warning */}
+        {formData.role === "admin" && (
+          <Alert variant="warning">
+            <ShieldAlert className="h-4 w-4" />
+            <AlertTitle>Admin Access Warning</AlertTitle>
+            <AlertDescription>
+              Creating an admin user will grant <strong>full system access</strong> to this account. 
+              Admins can manage all users, view all data, modify system settings, and perform critical operations. 
+              Only assign this role to trusted individuals.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Teacher Role Warning */}
+        {formData.role === "teacher" && (
+          <Alert variant="warning">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Teacher Access</AlertTitle>
+            <AlertDescription>
+              Teachers will have access to manage their assigned students, mark attendance, 
+              view timetables, and access student performance data. Ensure this person is authorized 
+              to view student information.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="flex items-center justify-between">
           <Label htmlFor="autoVerify" className="cursor-pointer">
             Auto-verify email
