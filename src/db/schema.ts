@@ -116,7 +116,9 @@ export const classAttendance = pgTable('class_attendance', {
   timetableId: text('timetable_id').references(() => timetable.id, { onDelete: 'set null' }),
   classDate: timestamp('class_date').notNull(), // The date when class was taken
   startTime: text('start_time').notNull(), // Actual start time "HH:MM"
-  duration: text('duration', { enum: ['30min', '45min', '1hr', '1.5hr', '1.75hr', '2hr', '2.5hr', '3hr'] }).notNull(), // Duration of class
+  duration: text('duration', {
+    enum: ['30min', '45min', '1hr', '1.5hr', '1.75hr', '2hr', '2.5hr', '3hr'],
+  }).notNull(), // Duration of class
   notes: text('notes'),
   markedAt: timestamp('marked_at')
     .$defaultFn(() => new Date())
