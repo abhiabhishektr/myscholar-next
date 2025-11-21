@@ -438,3 +438,148 @@ export async function getTopTeachers(limit: number = 5, startDate?: Date, endDat
 
   return topTeachers;
 }
+
+// Get comprehensive student statistics
+export async function getStudentDetailedStats(studentId: string, startDate?: Date, endDate?: Date) {
+  const whereConditions = [eq(classAttendance.studentId, studentId)];
+
+  if (startDate) {
+    whereConditions.push(gte(classAttendance.classDate, startDate));
+  }
+  if (endDate) {
+    whereConditions.push(lte(classAttendance.classDate, endDate));
+  }
+
+  // Get attendance records
+  const attendance = await getClassAttendance({ studentId, startDate, endDate });
+
+  // Calculate total hours
+  const durationToHours: Record<string, number> = {
+    '30min': 0.5,
+    '1hr': 1,
+    '1.5hr': 1.5,
+    '2hr': 2,
+  };
+
+  const totalHours = attendance.reduce(
+    (sum, record) => sum + (durationToHours[record.duration] || 0),
+    0,
+  );
+
+  // Get unique teachers and subjects
+  const uniqueTeachers = new Set(attendance.map((a) => a.teacherId)).size;
+  const uniqueSubjects = new Set(attendance.map((a) => a.subjectId)).size;
+
+  // Get duration breakdown
+  const durationBreakdown = attendance.reduce(
+    (acc, record) => {
+      acc[record.duration] = (acc[record.duration] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+
+  // Get teacher-wise breakdown
+  const teacherBreakdown = attendance.reduce(
+    (acc, record) => {
+      if (!acc[record.teacherId]) {
+        acc[record.teacherId] = {
+          teacherId: record.teacherId,
+          teacherName: record.teacherName || 'Unknown',
+          totalClasses: 0,
+          totalHours: 0,
+          subjects: new Set(),
+        };
+      }
+      acc[record.teacherId].totalClasses++;
+      acc[record.teacherId].totalHours += durationToHours[record.duration] || 0;
+      if (record.subjectName) {
+        acc[record.teacherId].subjects.add(record.subjectName);
+      }
+      return acc;
+    },
+    {} as Record<
+      string,
+      {
+        teacherId: string;
+        teacherName: string;
+        totalClasses: number;
+        totalHours: number;
+        subjects: Set<string>;
+      }
+    >,
+  );
+
+  const teacherStats = Object.values(teacherBreakdown).map((t) => ({
+    ...t,
+    subjects: Array.from(t.subjects),
+  }));
+
+  // Get subject-wise breakdown
+  const subjectBreakdown = attendance.reduce(
+    (acc, record) => {
+      const subjectName = record.subjectName || 'Unknown';
+      if (!acc[record.subjectId]) {
+        acc[record.subjectId] = {
+          subjectId: record.subjectId,
+          subjectName: subjectName,
+          totalClasses: 0,
+          totalHours: 0,
+          teachers: new Set(),
+        };
+      }
+      acc[record.subjectId].totalClasses++;
+      acc[record.subjectId].totalHours += durationToHours[record.duration] || 0;
+      if (record.teacherName) {
+        acc[record.subjectId].teachers.add(record.teacherName);
+      }
+      return acc;
+    },
+    {} as Record<
+      string,
+      {
+        subjectId: string;
+        subjectName: string;
+        totalClasses: number;
+        totalHours: number;
+        teachers: Set<string>;
+      }
+    >,
+  );
+
+  const subjectStats = Object.values(subjectBreakdown).map((s) => ({
+    ...s,
+    teachers: Array.from(s.teachers),
+  }));
+
+  // Get monthly breakdown for trend analysis
+  const monthlyBreakdown = attendance.reduce(
+    (acc, record) => {
+      const date = new Date(record.classDate);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      if (!acc[monthKey]) {
+        acc[monthKey] = { month: monthKey, totalClasses: 0, totalHours: 0 };
+      }
+      acc[monthKey].totalClasses++;
+      acc[monthKey].totalHours += durationToHours[record.duration] || 0;
+      return acc;
+    },
+    {} as Record<string, { month: string; totalClasses: number; totalHours: number }>,
+  );
+
+  const monthlyStats = Object.values(monthlyBreakdown).sort((a, b) =>
+    a.month.localeCompare(b.month),
+  );
+
+  return {
+    totalClasses: attendance.length,
+    totalHours,
+    uniqueTeachers,
+    uniqueSubjects,
+    durationBreakdown,
+    teacherStats,
+    subjectStats,
+    monthlyStats,
+    recentClasses: attendance.slice(0, 10), // Last 10 classes
+  };
+}

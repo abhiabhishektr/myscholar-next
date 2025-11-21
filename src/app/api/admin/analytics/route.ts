@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import {
   getTeacherDetailedStats,
+  getStudentDetailedStats,
   getOverallStats,
   getTopTeachers,
   getMissedClasses,
@@ -23,8 +24,9 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const type = searchParams.get('type'); // 'teacher', 'overall', 'top-teachers', 'missed'
+    const type = searchParams.get('type'); // 'teacher', 'student', 'overall', 'top-teachers', 'missed'
     const teacherId = searchParams.get('teacherId');
+    const studentId = searchParams.get('studentId');
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     const limit = searchParams.get('limit');
@@ -39,6 +41,13 @@ export async function GET(request: NextRequest) {
         }
         const teacherStats = await getTeacherDetailedStats(teacherId, start, end);
         return NextResponse.json({ stats: teacherStats }, { status: 200 });
+
+      case 'student':
+        if (!studentId) {
+          return NextResponse.json({ error: 'Student ID is required' }, { status: 400 });
+        }
+        const studentStats = await getStudentDetailedStats(studentId, start, end);
+        return NextResponse.json({ stats: studentStats }, { status: 200 });
 
       case 'overall':
         const overallStats = await getOverallStats(start, end);

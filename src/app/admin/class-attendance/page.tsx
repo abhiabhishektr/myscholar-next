@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { TeacherSelector } from "@/components/admin/teacher-selector";
+import { StudentSelector } from "@/components/admin/student-selector";
 import type { UserWithDetails } from "@/utils/users";
 
 interface AttendanceRecord {
@@ -86,12 +87,42 @@ interface TopTeacher {
   uniqueStudents: number;
 }
 
+interface StudentStats {
+  totalClasses: number;
+  totalHours: number;
+  uniqueTeachers: number;
+  uniqueSubjects: number;
+  durationBreakdown: Record<string, number>;
+  teacherStats: Array<{
+    teacherId: string;
+    teacherName: string;
+    totalClasses: number;
+    totalHours: number;
+    subjects: string[];
+  }>;
+  subjectStats: Array<{
+    subjectId: string;
+    subjectName: string;
+    totalClasses: number;
+    totalHours: number;
+    teachers: string[];
+  }>;
+  monthlyStats: Array<{
+    month: string;
+    totalClasses: number;
+    totalHours: number;
+  }>;
+  recentClasses: AttendanceRecord[];
+}
+
 export default function ClassAttendancePage() {
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [filteredAttendance, setFilteredAttendance] = useState<AttendanceRecord[]>([]);
   const [teachers, setTeachers] = useState<UserWithDetails[]>([]);
+  const [students, setStudents] = useState<UserWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTeacher, setSelectedTeacher] = useState<string>("all");
+  const [selectedStudent, setSelectedStudent] = useState<string>("all");
   const [studentSearch, setStudentSearch] = useState<string>("");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
@@ -100,6 +131,10 @@ export default function ClassAttendancePage() {
   // Teacher Details
   const [teacherStats, setTeacherStats] = useState<TeacherStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
+  
+  // Student Details
+  const [studentStats, setStudentStats] = useState<StudentStats | null>(null);
+  const [loadingStudentStats, setLoadingStudentStats] = useState(false);
   
   // Overall Stats
   const [overallStats, setOverallStats] = useState<OverallStats | null>(null);
@@ -115,6 +150,7 @@ export default function ClassAttendancePage() {
    
   useEffect(() => {
     fetchTeachers();
+    fetchStudents();
     fetchAttendance();
     fetchOverallStats();
     fetchTopTeachers();
@@ -169,6 +205,17 @@ export default function ClassAttendancePage() {
       console.error('Error fetching teachers:', error);
       toast.error('Failed to load teachers — retrying later');
       setTeachers([]);
+    }
+  };
+
+  const fetchStudents = async () => {
+    try {
+      const data = await fetchWithRetry('/api/admin/users?role=student', {}, 3, 5000);
+      setStudents(data.users || []);
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      toast.error('Failed to load students — retrying later');
+      setStudents([]);
     }
   };
 
@@ -272,6 +319,34 @@ export default function ClassAttendancePage() {
     }
   };
 
+  const fetchStudentStats = async (studentId: string) => {
+    if (!studentId || studentId === "all") {
+      setStudentStats(null);
+      return;
+    }
+
+    try {
+      setLoadingStudentStats(true);
+      const params = new URLSearchParams({ type: 'student', studentId });
+      if (startDate) params.append('startDate', new Date(startDate).toISOString());
+      if (endDate) params.append('endDate', new Date(endDate).toISOString());
+
+      const data = await fetchWithRetry(
+        `/api/admin/analytics?${params.toString()}`,
+        {},
+        3,
+        8000
+      );
+      setStudentStats(data.stats);
+    } catch (error) {
+      console.error("Error fetching student stats:", error);
+      toast.error("Failed to load student statistics — retrying");
+      setStudentStats(null);
+    } finally {
+      setLoadingStudentStats(false);
+    }
+  };
+
   const handleFilter = () => {
     fetchAttendance({
       teacherId: selectedTeacher,
@@ -286,14 +361,26 @@ export default function ClassAttendancePage() {
 
   const handleReset = () => {
     setSelectedTeacher("all");
+    setSelectedStudent("all");
     setStudentSearch("");
     setStartDate("");
     setEndDate("");
     setTeacherStats(null);
+    setStudentStats(null);
     setCurrentPage(1); // Reset to first page
     setShowAllStudents(false);
     setShowAllSubjects(false);
     fetchAttendance();
+  };
+
+  const handleStudentSelect = (studentId: string) => {
+    setSelectedStudent(studentId);
+    if (studentId !== "all") {
+      fetchStudentStats(studentId);
+      setActiveTab("student-details");
+    } else {
+      setStudentStats(null);
+    }
   };
 
   const applyDatePreset = (preset: "today" | "week" | "month") => {
@@ -410,7 +497,7 @@ export default function ClassAttendancePage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">
             <BarChart3 className="h-4 w-4 mr-2" />
             Overview
@@ -418,6 +505,10 @@ export default function ClassAttendancePage() {
           <TabsTrigger value="teacher-details" disabled={!teacherStats}>
             <User className="h-4 w-4 mr-2" />
             Teacher Details
+          </TabsTrigger>
+          <TabsTrigger value="student-details" disabled={!studentStats}>
+            <Users className="h-4 w-4 mr-2" />
+            Student Details
           </TabsTrigger>
           <TabsTrigger value="records">
             <Calendar className="h-4 w-4 mr-2" />
@@ -541,6 +632,71 @@ export default function ClassAttendancePage() {
               </div>
               <div className="flex gap-2 mt-4">
                 <Button onClick={handleFilter}>
+                  Apply Filters
+                </Button>
+                <Button onClick={handleReset} variant="outline">
+                  Reset
+                </Button>
+                <div className="flex-1" />
+                <Button variant="outline" size="sm" onClick={() => applyDatePreset("today")}>
+                  Today
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => applyDatePreset("week")}>
+                  This Week
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => applyDatePreset("month")}>
+                  This Month
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Search Student */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Search Student
+              </CardTitle>
+              <CardDescription>Select a student to view detailed attendance history</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="space-y-2">
+                  <Label>Student</Label>
+                  <StudentSelector
+                    students={students}
+                    selectedStudentId={selectedStudent}
+                    onStudentChange={handleStudentSelect}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="startDate-student">Start Date</Label>
+                  <Input
+                    id="startDate-student"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="endDate-student">End Date</Label>
+                  <Input
+                    id="endDate-student"
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Button onClick={() => {
+                  if (selectedStudent !== "all") {
+                    fetchStudentStats(selectedStudent);
+                  }
+                }}>
                   Apply Filters
                 </Button>
                 <Button onClick={handleReset} variant="outline">
@@ -801,6 +957,300 @@ export default function ClassAttendancePage() {
                 <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                 <p className="text-muted-foreground">
                   Select a teacher from the Overview tab to view detailed statistics
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Student Details Tab */}
+        <TabsContent value="student-details" className="space-y-6">
+          {loadingStudentStats ? (
+            <Card>
+              <CardContent className="py-12">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  <p className="text-sm text-muted-foreground">Loading student statistics...</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : studentStats ? (
+            <>
+              {/* Student Performance Summary */}
+              <div className="grid gap-4 md:grid-cols-4">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      Classes Attended
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold">{studentStats.totalClasses}</div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Total sessions
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      Total Hours
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold">{studentStats.totalHours.toFixed(1)}</div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Learning hours
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      Teachers
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold">{studentStats.uniqueTeachers}</div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {studentStats.uniqueSubjects} subjects
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      Average Hours/Month
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold">
+                      {studentStats.monthlyStats.length > 0
+                        ? (studentStats.totalHours / studentStats.monthlyStats.length).toFixed(1)
+                        : "0"}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Per month
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Duration Breakdown */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Class Duration Distribution</CardTitle>
+                  <CardDescription>Breakdown of class lengths attended</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {Object.keys(studentStats.durationBreakdown).length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Clock className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>No duration data available</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-4 gap-4">
+                      {Object.entries(studentStats.durationBreakdown).map(([duration, count]) => (
+                        <div key={duration} className="text-center p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                          <div className="text-2xl font-bold">{count}</div>
+                          <div className="text-sm text-muted-foreground">{getDurationLabel(duration)}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Teacher-wise Breakdown */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Teacher-wise Breakdown</CardTitle>
+                  <CardDescription>
+                    Classes attended from each teacher
+                    {studentStats.teacherStats.length > INITIAL_DISPLAY_LIMIT && 
+                      ` (${studentStats.teacherStats.length} teachers)`}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {studentStats.teacherStats.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <User className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>No teacher data available</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+                        {(showAllStudents 
+                          ? studentStats.teacherStats 
+                          : studentStats.teacherStats.slice(0, INITIAL_DISPLAY_LIMIT)
+                        ).map((teacher) => (
+                          <div key={teacher.teacherId} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium truncate">{teacher.teacherName}</div>
+                              <div className="text-sm text-muted-foreground truncate">
+                                {teacher.subjects.join(", ")}
+                              </div>
+                            </div>
+                            <div className="text-right ml-4 shrink-0">
+                              <div className="font-bold">{teacher.totalClasses} classes</div>
+                              <div className="text-sm text-muted-foreground">{teacher.totalHours.toFixed(1)} hours</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {studentStats.teacherStats.length > INITIAL_DISPLAY_LIMIT && (
+                        <div className="mt-4 text-center">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => setShowAllStudents(!showAllStudents)}
+                          >
+                            {showAllStudents ? 'Show Less' : `Show All ${studentStats.teacherStats.length} Teachers`}
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Subject-wise Breakdown */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Subject-wise Breakdown</CardTitle>
+                  <CardDescription>
+                    Classes per subject with teacher details
+                    {studentStats.subjectStats.length > INITIAL_DISPLAY_LIMIT && 
+                      ` (${studentStats.subjectStats.length} subjects)`}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {studentStats.subjectStats.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>No subject data available</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid md:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto pr-2">
+                        {(showAllSubjects 
+                          ? studentStats.subjectStats 
+                          : studentStats.subjectStats.slice(0, INITIAL_DISPLAY_LIMIT)
+                        ).map((subject) => (
+                          <div key={subject.subjectId} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium truncate">{subject.subjectName}</div>
+                              <div className="text-sm text-muted-foreground truncate">
+                                Teachers: {subject.teachers.join(", ")}
+                              </div>
+                              <div className="text-sm text-muted-foreground mt-1">
+                                {subject.totalHours.toFixed(1)} hours
+                              </div>
+                            </div>
+                            <div className="text-2xl font-bold ml-4 shrink-0">{subject.totalClasses}</div>
+                          </div>
+                        ))}
+                      </div>
+                      {studentStats.subjectStats.length > INITIAL_DISPLAY_LIMIT && (
+                        <div className="mt-4 text-center">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => setShowAllSubjects(!showAllSubjects)}
+                          >
+                            {showAllSubjects ? 'Show Less' : `Show All ${studentStats.subjectStats.length} Subjects`}
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Monthly Trend */}
+              {studentStats.monthlyStats.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Monthly Attendance Trend</CardTitle>
+                    <CardDescription>Classes and hours per month</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {studentStats.monthlyStats.map((month) => (
+                        <div key={month.month} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">
+                              {new Date(month.month + "-01").toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "long"
+                              })}
+                            </span>
+                          </div>
+                          <div className="flex gap-6 text-sm">
+                            <div>
+                              <span className="text-muted-foreground">Classes: </span>
+                              <span className="font-bold">{month.totalClasses}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Hours: </span>
+                              <span className="font-bold">{month.totalHours.toFixed(1)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Recent Classes */}
+              {studentStats.recentClasses.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Recent Classes</CardTitle>
+                    <CardDescription>Last 10 classes attended</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {studentStats.recentClasses.map((record) => (
+                        <div key={record.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors">
+                          <div className="flex-1 space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                                <Calendar className="h-3 w-3 mr-1" />
+                                {formatDate(record.classDate)}
+                              </Badge>
+                              <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                                <Clock className="h-3 w-3 mr-1" />
+                                {formatTime(record.startTime)}
+                              </Badge>
+                              <Badge variant="outline">
+                                {getDurationLabel(record.duration)}
+                              </Badge>
+                            </div>
+                            <div className="text-sm">
+                              <span className="font-medium">{record.teacherName}</span>
+                              {" • "}
+                              <span className="text-muted-foreground">{record.subjectName}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          ) : (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <p className="text-muted-foreground">
+                  Select a student from the Overview tab to view detailed attendance history
                 </p>
               </CardContent>
             </Card>
