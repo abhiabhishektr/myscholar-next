@@ -49,10 +49,10 @@ const AdminPage = async () => {
   ];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-        <p className="text-muted-foreground mt-2">
+    <div className="flex flex-col gap-6 p-4 md:p-6">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        <p className="text-muted-foreground">
           Welcome to the admin panel. Manage all aspects of your application from here.
         </p>
       </div>
@@ -79,8 +79,8 @@ const AdminPage = async () => {
       </div>
 
       {/* Quick Stats Section */}
-      <div className="mt-8">
-        <h2 className="text-2xl font-bold tracking-tight mb-4">Quick Statistics</h2>
+      <div className="flex flex-col gap-6">
+        <h2 className="text-2xl font-bold">Quick Statistics</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
