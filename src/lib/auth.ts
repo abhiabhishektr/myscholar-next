@@ -8,6 +8,10 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: 'pg', schema: { ...schema, user: schema.user } }),
+  trustedOrigins: [
+    process.env.BETTER_AUTH_URL || 'http://localhost:3000',
+    process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+  ],
   account: { accountLinking: { enabled: true } },
   emailAndPassword: {
     enabled: true,
