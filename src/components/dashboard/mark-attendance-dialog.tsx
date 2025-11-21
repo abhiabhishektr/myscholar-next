@@ -39,10 +39,14 @@ interface MarkAttendanceDialogProps {
 }
 
 const DURATION_OPTIONS = [
-  { value: "30min", label: "30 minutes" },
-  { value: "1hr", label: "1 hour" },
-  { value: "1.5hr", label: "1.5 hours" },
-  { value: "2hr", label: "2 hours" },
+  { value: "30min", label: "30 minutes", hours: 0.5, category: "Short" },
+  { value: "45min", label: "45 minutes", hours: 0.75, category: "Short" },
+  { value: "1hr", label: "1 hour", hours: 1, category: "Standard" },
+  { value: "1.5hr", label: "1 hour 30 minutes", hours: 1.5, category: "Standard" },
+  { value: "1.75hr", label: "1 hour 45 minutes", hours: 1.75, category: "Standard" },
+  { value: "2hr", label: "2 hours", hours: 2, category: "Extended" },
+  { value: "2.5hr", label: "2 hours 30 minutes", hours: 2.5, category: "Extended" },
+  { value: "3hr", label: "3 hours", hours: 3, category: "Extended" },
 ] as const;
 
 // Generate time options in 30-minute intervals
@@ -70,7 +74,7 @@ export function MarkAttendanceDialog({
   onSuccess,
 }: MarkAttendanceDialogProps) {
   const [startTime, setStartTime] = useState(classInfo.scheduledStartTime);
-  const [duration, setDuration] = useState<"30min" | "1hr" | "1.5hr" | "2hr">("1hr");
+  const [duration, setDuration] = useState<typeof DURATION_OPTIONS[number]["value"]>("1hr");
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -165,14 +169,28 @@ export function MarkAttendanceDialog({
                 <SelectTrigger id="duration">
                   <SelectValue placeholder="Select duration" />
                 </SelectTrigger>
-                <SelectContent>
-                  {DURATION_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
+                <SelectContent className="max-h-[300px]">
+                  {/* Group by category */}
+                  {["Short", "Standard", "Extended"].map((category) => (
+                    <div key={category}>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                        {category} Sessions
+                      </div>
+                      {DURATION_OPTIONS.filter((opt) => opt.category === category).map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          <div className="flex items-center justify-between w-full">
+                            <span>{option.label}</span>
+                            <span className="text-xs text-muted-foreground ml-3">({option.hours}h)</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </div>
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                Select the actual duration of the class session
+              </p>
             </div>
 
             {/* Notes */}

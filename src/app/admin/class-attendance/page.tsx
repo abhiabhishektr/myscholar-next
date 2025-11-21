@@ -419,9 +419,13 @@ export default function ClassAttendancePage() {
   const getDurationLabel = (duration: string) => {
     const labels: Record<string, string> = {
       "30min": "30 min",
+      "45min": "45 min",
       "1hr": "1 hour",
-      "1.5hr": "1.5 hours",
+      "1.5hr": "1h 30min",
+      "1.75hr": "1h 45min",
       "2hr": "2 hours",
+      "2.5hr": "2h 30min",
+      "3hr": "3 hours",
     };
     return labels[duration] || duration;
   };
@@ -478,9 +482,13 @@ export default function ClassAttendancePage() {
   const totalHours = displayData.reduce((sum, record) => {
     const hours: Record<string, number> = {
       "30min": 0.5,
+      "45min": 0.75,
       "1hr": 1,
       "1.5hr": 1.5,
+      "1.75hr": 1.75,
       "2hr": 2,
+      "2.5hr": 2.5,
+      "3hr": 3,
     };
     return sum + (hours[record.duration] || 0);
   }, 0);

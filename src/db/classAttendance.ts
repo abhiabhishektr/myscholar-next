@@ -10,7 +10,7 @@ export async function markClassAttendance(data: {
   timetableId?: string;
   classDate: Date;
   startTime: string; // "HH:MM"
-  duration: '30min' | '1hr' | '1.5hr' | '2hr';
+  duration: '30min' | '45min' | '1hr' | '1.5hr' | '1.75hr' | '2hr' | '2.5hr' | '3hr';
   notes?: string;
 }) {
   const result = await db
@@ -275,9 +275,13 @@ export async function getTeacherDetailedStats(teacherId: string, startDate?: Dat
   // Calculate total hours
   const durationToHours: Record<string, number> = {
     '30min': 0.5,
+    '45min': 0.75,
     '1hr': 1,
     '1.5hr': 1.5,
+    '1.75hr': 1.75,
     '2hr': 2,
+    '2.5hr': 2.5,
+    '3hr': 3,
   };
 
   const totalHours = attendance.reduce(
@@ -456,9 +460,13 @@ export async function getStudentDetailedStats(studentId: string, startDate?: Dat
   // Calculate total hours
   const durationToHours: Record<string, number> = {
     '30min': 0.5,
+    '45min': 0.75,
     '1hr': 1,
     '1.5hr': 1.5,
+    '1.75hr': 1.75,
     '2hr': 2,
+    '2.5hr': 2.5,
+    '3hr': 3,
   };
 
   const totalHours = attendance.reduce(
